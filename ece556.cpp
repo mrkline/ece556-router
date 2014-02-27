@@ -2,23 +2,17 @@
 
 #include "ece556.hpp"
 
-int readBenchmark(const char *fileName, routingInst *rst)
+void readBenchmark(const char *fileName, RoutingInst& rst)
 {
   /*********** TO BE FILLED BY YOU **********/  
-
-  return 1;
 }
 
-int solveRouting(routingInst *rst)
+void solveRouting(RoutingInst& rst)
 {
   /*********** TO BE FILLED BY YOU **********/
-
-  return 1;
 }
 
-int writeOutput(const char *outRouteFile, routingInst *rst)
+void writeOutput(const char *outRouteFile, RoutingInst& rst)
 {
   /*********** TO BE FILLED BY YOU **********/
-
-  return 1;
 }

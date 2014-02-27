@@ -2,45 +2,38 @@
 
 #include "ece556.hpp"
 
-int main(int argc, char **argv)
+// I prefer printf to cout. It's easier to format stuff and the stream operator for cout can be weird.
+#include <cstdio>
+
+int main(int argc, char** argv)
 {
 
- 	if(argc!=3) {
- 		printf("Usage : ./ROUTE.exe <input_benchmark_name> <output_file_name> \n");
+ 	if (argc!=3) {
+ 		printf("Usage : route <input_benchmark_name> <output_file_name> \n");
  		return 1;
  	}
 
- 	int status;
-	char *inputFileName = argv[1];
- 	char *outputFileName = argv[2];
+	const char* inputFileName = argv[1];
+ 	const char* outputFileName = argv[2];
 
  	/// create a new routing instance
- 	routingInst *rst = new routingInst;
-	
- 	/// read benchmark
- 	status = readBenchmark(inputFileName, rst);
- 	if(status==0){
- 		printf("ERROR: reading input file \n");
- 		return 1;
- 	}
-	
- 	/// run actual routing
- 	status = solveRouting(rst);
- 	if(status==0){
- 		printf("ERROR: running routing \n");
- 		release(rst);
- 		return 1;
- 	}
-	
- 	/// write the result
- 	status = writeOutput(outputFileName, rst);
- 	if(status==0){
- 		printf("ERROR: writing the result \n");
- 		release(rst);
- 		return 1;
- 	}
+ 	RoutingInst rst;
 
- 	release(rst);
- 	printf("\nDONE!\n");	
- 	return 0;
+ 	/// read benchmark
+	try {
+		readBenchmark(inputFileName, rst);
+
+		/// run actual routing
+		solveRouting(rst);
+
+		/// write the result
+		writeOutput(outputFileName, rst);
+
+		printf("\nDONE!\n");
+		return 0;
+	}
+	catch (std::exception& ex) {
+		printf("Error: %s\n", ex.what());
+		return 1;
+	}
 }

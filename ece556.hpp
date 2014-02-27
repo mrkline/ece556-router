@@ -54,37 +54,33 @@ struct RoutingInst
 	int numEdges; ///< number of edges of the grid
 	std::vector<int> edgeCaps; ///< array of the actual edge capacities after considering for blockage
 	std::vector<int> edgeUtils; ///< array of edge utilizations
-
 };
 
 
-/* int readBenchmark(const char *fileName, routingInst *rst)
- * Read in the benchmark file and initialize the routing instance.
+/**
+ * \brief Read in the benchmark file and initialize the routing instance.
+ * \param fileName Name of the benchmark input file
+ * \param rst The to the routing instance to populate
+ *
  * This function needs to populate all fields of the routingInst structure.
- * input1: fileName: Name of the benchmark input file
- * input2: pointer to the routing instance
- * output: 1 if successful
  */
-int readBenchmark(const char *fileName, routingInst *rst);
+void readBenchmark(const char *fileName, RoutingInst& rst);
 
 
-/* int solveRouting(routingInst *rst)
- * This function creates a routing solution
- * input: pointer to the routing instance
- * output: 1 if successful, 0 otherwise (e.g. the data structures are not populated)
+/**
+ * \brief reates a routing solution
+ * \param rst The routing instance
  */
-int solveRouting(routingInst *rst);
+void solveRouting(RoutingInst& rst);
 
-/* int writeOutput(const char *outRouteFile, routingInst *rst)
- * Write the routing solution obtained from solveRouting().
+/**
+ * \brief Write the routing solution obtained from solveRouting().
+ * \param outRouteFile name of the output file
+ * \param rst The routing instance
+ *
  * Refer to the project link for the required output format.
-
  * Finally, make sure your generated output file passes the evaluation script to make sure
  * it is in the correct format and the nets have been correctly routed. The script also reports
  * the total wirelength and overflow of your routing solution.
-
- * input1: name of the output file
- * input2: pointer to the routing instance
- * output: 1 if successful, 0 otherwise
  */
-int writeOutput(const char *outRouteFile, routingInst *rst);
+void writeOutput(const char *outRouteFile, RoutingInst& rst);

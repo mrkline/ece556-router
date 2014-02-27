@@ -1,7 +1,7 @@
 # Taken largely from http://scottmcpeak.com/autodepend/autodepend.html
 
 CXXFLAGS := -std=c++11 -Wall -Wextra -Weffc++ -pedantic
-LIBFLAGS := 
+LIBFLAGS :=
 
 OBJS := $(patsubst %.cpp,%.o, $(wildcard *.cpp))
 
@@ -13,7 +13,7 @@ release: route
 
 # link
 route: $(OBJS) main.o
-	$(CXX) $(CXXFLAGS) $(OBJS)  $(LIBFLAGS) main.o -o route
+	$(CXX) $(CXXFLAGS) $(OBJS) $(LIBFLAGS) -o route
 
 # pull in dependency info for *existing* .o files
 -include $(OBJS:.o=.d)
