@@ -1,11 +1,11 @@
 // ECE556 - Copyright 2014 University of Wisconsin-Madison.  All Rights Reserved.
 
-#include "ece556.h"
+#include "ece556.hpp"
 
 int main(int argc, char **argv)
 {
 
- 	if(argc!=3){
+ 	if(argc!=3) {
  		printf("Usage : ./ROUTE.exe <input_benchmark_name> <output_file_name> \n");
  		return 1;
  	}

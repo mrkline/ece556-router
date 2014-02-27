@@ -1,41 +1,48 @@
-SYSTEM     = x86-64_sles10_4.1
-LIBFORMAT  = static_pic
+# Taken largely from http://scottmcpeak.com/autodepend/autodepend.html
 
-# ---------------------------------------------------------------------         
-# Compiler selection                                                            
-# ---------------------------------------------------------------------         
+CXXFLAGS := -std=c++11 -Wall -Wextra -Weffc++ -pedantic
+LIBFLAGS := 
 
-CCC = g++
+OBJS := $(patsubst %.cpp,%.o, $(wildcard *.cpp))
 
-# ---------------------------------------------------------------------         
-# Compiler options                                                              
-# ---------------------------------------------------------------------         
+debug: CXXFLAGS += -g
+debug: route
 
-CCOPT = -m64 -O -fPIC -fexceptions -DNDEBUG -DIL_STD -g -Wall
+release: CXXFLAGS+= -O2 -DNDEBUG
+release: route
 
-# ---------------------------------------------------------------------         
-# Link options and libraries                                                    
-# ---------------------------------------------------------------------         
+# link
+route: $(OBJS) main.o
+	$(CXX) $(CXXFLAGS) $(OBJS)  $(LIBFLAGS) main.o -o route
 
-CCFLAGS = $(CCOPT) 
-CCLNFLAGS = -lm -pthread 
+# pull in dependency info for *existing* .o files
+-include $(OBJS:.o=.d)
+-include $(TESTOBJS:.o=.d)
 
-#------------------------------------------------------------                   
-#  make all      : to compile.                                     
-#  make execute  : to compile and execute.                         
-#------------------------------------------------------------    
+# For if we used precomipled headers later
+# precomp.hpp.gch: precomp.hpp
+# 	$(CXX) $(CXXFLAGS) precomp.hpp
 
-ROUTE.exe: main.o ece556.o 
-	/bin/rm -f ROUTE.exe
-	$(CCC) $(LINKFLAGS) $(CCFLAGS) main.o ece556.o $(CCLNFLAGS) -o ROUTE.exe
+# compile and generate dependency info;
+# more complicated dependency computation, so all prereqs listed
+# will also become command-less, prereq-less targets
+#   sed:    strip the target (everything before colon)
+#   sed:    remove any continuation backslashes
+#   fmt -1: list words one per line
+#   sed:    strip leading spaces
+#   sed:    add trailing colons
+# %.o: precomp.hpp.gch %.cpp
+%.o: %.cpp
+	$(CXX) -c $(CXXFLAGS) $*.cpp -o $*.o
+	$(CXX) -MM $(CXXFLAGS) $*.cpp > $*.d
+	@mv -f $*.d $*.d.tmp
+	@sed -e 's|.*:|$*.o:|' < $*.d.tmp > $*.d
+	@sed -e 's/.*://' -e 's/\\$$//' < $*.d.tmp | fmt -1 | \
+	  sed -e 's/^ *//' -e 's/$$/:/' >> $*.d
+	@rm -f $*.d.tmp
 
-main.o: main.cpp ece556.h
-	/bin/rm -f main.o
-	$(CCC) $(CCFLAGS) main.cpp -c
-
-ece556.o: ece556.cpp ece556.h
-	/bin/rm -f ece556.o
-	$(CCC) $(CCFLAGS) ece556.cpp -c
-
+# remove compilation products
 clean:
-	/bin/rm -f *~ *.o ROUTE.exe 
+	rm -f *.o *.gch *.d route
+
+.PHONY: clean debug release
