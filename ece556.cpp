@@ -4,7 +4,7 @@
 
 void readBenchmark(const char *fileName, RoutingInst& rst)
 {
-  /*********** TO BE FILLED BY YOU **********/  
+  /*********** TO BE FILLED BY YOU **********/
 }
 
 void solveRouting(RoutingInst& rst)

@@ -4,9 +4,7 @@
 
 #include <vector>
 
-/**
- * A structure to represent a 2D Point.
- */
+/// Represents a 2D Point
 struct Point {
 
 	int x; ///< x coordinate ( >=0 in the routing grid)
@@ -14,9 +12,7 @@ struct Point {
 };
 
 
-/**
- * A structure to represent a segment
- */
+/// A segment consisting of two points and edges
 struct Segment {
 
 	Point p1 ; ///< start point of a segment
@@ -25,12 +21,11 @@ struct Segment {
 	std::vector<int> edges; ///< Edges representing the segment
 };
 
+/// A route is a series of segments
 typedef std::vector<Segment> Route;
 
 
-/**
- * A structure to represent nets
- */
+/// A structure to represent nets
 struct Net {
 
 	int id; ///< ID of the net
@@ -39,9 +34,7 @@ struct Net {
 	Route nroute; ///< stored route for the net.
 };
 
-/**
- * A structure to represent the routing instance
- */
+/// Represents a routing instance
 struct RoutingInst
 {
 	int gx; ///< x dimension of the global routing grid
