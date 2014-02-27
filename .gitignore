@@ -1,0 +1,5 @@
+*.swp
+*.gch
+*.o
+*.d
+route
