@@ -166,6 +166,7 @@ RoutingInst Reader::readRoutingInst()
 				for(int i = 0; i < netCount; ++i) {
 					result.nets.push_back(readNet());
 				}
+				break;
 			default:
 				if(readHdr) {
 					emitMessage("Warning: Skipped reading blockages.");
