@@ -95,8 +95,6 @@ void Reader::expect(TokenType ty)
 
 Point Reader::readPoint()
 {
-	assert(tokenType == TInteger);
-
 	Point result;
 
 	expect(TInteger);
