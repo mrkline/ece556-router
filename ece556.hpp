@@ -3,22 +3,53 @@
 #pragma once
 
 #include <vector>
+#include <iosfwd>
+#include "edgeid.hpp"
+#include "util.hpp"
 
 /// Represents a 2D Point
 struct Point {
 
 	int x; ///< x coordinate ( >=0 in the routing grid)
 	int y; ///< y coordinate ( >=0 in the routing grid)
+
+	bool operator ==(const Point &that) const
+	{
+		return x == that.x && y == that.y;
+	}
 };
 
 
 /// A segment consisting of two points and edges
+/// This is not, strictly speaking, a line segment, but is actually a linear spline (a collection of
+/// connected line segments).
 struct Segment {
 
 	Point p1 ; ///< start point of a segment
 	Point p2 ; ///< end point of a segment
-
+	
 	std::vector<int> edges; ///< Edges representing the segment
+};
+
+/// This is a real line segment. In this router, they are always 1 unit long.
+struct Edge {
+	Point p1, p2;
+
+	static Edge horizontal(Point p1) 
+	{
+		return Edge{p1, {p1.x+1, p1.y}};
+	}
+
+	static Edge vertical(Point p1)
+	{
+		return Edge{p1, {p1.x, p1.y+1}};
+	}
+
+
+	bool operator ==(const Edge &that) const 
+	{
+		return p1 == that.p1 && p2 == that.p2;
+	}
 };
 
 /// A route is a series of segments
@@ -35,8 +66,7 @@ struct Net {
 };
 
 /// Represents a routing instance
-struct RoutingInst
-{
+struct RoutingInst {
 	int gx; ///< x dimension of the global routing grid
 	int gy; ///< y dimension of the global routing grid
 
@@ -47,6 +77,39 @@ struct RoutingInst
 	int numEdges; ///< number of edges of the grid
 	std::vector<int> edgeCaps; ///< array of the actual edge capacities after considering for blockage
 	std::vector<int> edgeUtils; ///< array of edge utilizations
+
+	int edgeID(const Point &p1, const Point &p2) const
+	{
+		return ::edgeID(gx, gy, p1.x, p1.y, p2.x, p2.y);
+	}
+
+	Edge edge(int edgeID) const
+	{
+		return ::edge(gx, gy, edgeID);
+	}
+
+	void setEdgeUtil(const Point &p1, const Point &p2, int util)
+	{
+		int id = edgeID(p1, p2);
+		getElementResizingIfNecessary(edgeUtils, id, 0) = util;
+	}
+
+	int edgeUtil(const Point &p1, const Point &p2) const
+	{
+		int id = edgeID(p1, p2);
+		return getElementOrDefault(edgeUtils, id, 0);
+	}
+
+	void setEdgeCap(const Point &p1, const Point &p2, int capacity)
+	{
+		int id = edgeID(p1, p2);
+		getElementResizingIfNecessary(edgeCaps, id, cap) = capacity;
+	}
+
+	int edgeCap(const Point &p1, const Point &p2) const
+	{
+		return getElementOrDefault(edgeCaps, edgeID(p1, p2), cap);
+	}
 };
 
 
@@ -77,3 +140,8 @@ void solveRouting(RoutingInst& rst);
  * the total wirelength and overflow of your routing solution.
  */
 void writeOutput(const char *outRouteFile, RoutingInst& rst);
+
+
+std::ostream &operator <<(std::ostream &, const Point &);
+std::ostream &operator <<(std::ostream &, const Edge &);
+

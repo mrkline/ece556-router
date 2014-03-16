@@ -145,7 +145,7 @@ RoutingInst Reader::readRoutingInst()
 
 	bool readHdr = false;
 	int netCount = 0;
-	// TODO: figure out what to do with blockages
+
 	while(tokenType != TInvalid) {
 		switch(tokenType) {
 			case KWGrid: 
@@ -154,10 +154,12 @@ RoutingInst Reader::readRoutingInst()
 				expect(TInteger);
 				result.gy = intValue;
 				break;
-			case KWCapacity: 
+
+			case KWCapacity:
 				expect(TInteger);
 				result.cap = intValue;
 				break;
+
 			case KWNum:
 				readHdr = true;
 				expect(KWNet);
@@ -167,17 +169,28 @@ RoutingInst Reader::readRoutingInst()
 					result.nets.push_back(readNet());
 				}
 				break;
+
+			case TInteger: {
+				if(!readHdr) {
+					fail("Unexpected integer.");
+				}
+
+				int nBlockages = intValue;
+
+				for(int i = 0; i < nBlockages; ++i) {
+					Point p1 = readPoint();
+					Point p2 = readPoint();
+					expect(TInteger);
+					int capacity = intValue;
+					result.setEdgeCap(p1, p2, capacity);
+				}
+
+			} break;
 			default:
-				if(readHdr) {
-					emitMessage("Warning: Skipped reading blockages.");
-					goto exit;
-				}
-				else {
-					unexpected();
-				}
+				unexpected();
 		}
 		readNextToken();
 	}
-exit:
+
 	return result;
 }

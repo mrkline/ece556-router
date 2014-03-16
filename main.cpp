@@ -21,6 +21,12 @@ static void testReadingInput()
 				std::cout << "--> pin: " << point.x << " " << point.y << "\n";
 			}
 		}
+
+		int i = 0;
+		for(int cap : inst.edgeCaps) {
+			std::cout << "-> edge " << i << " cap " << cap << "\n";
+			++i;
+		}
 	}
 	catch(std::exception &exc) {
 		std::cerr << "Error: " << exc.what() << "\n";
@@ -29,9 +35,11 @@ static void testReadingInput()
 
 int main(int argc, char** argv)
 {
+	// TODO: I'd like to put these tests in separate binaries, but that would mess with
+	// the makefile.
 	static_cast<void>(testReadingInput); // suppress unused warning
 // 	testReadingInput(); return 0;
-
+// 	testEdgeID(); return 0;
 
  	if (argc!=3) {
  		printf("Usage : route <input_benchmark_name> <output_file_name> \n");
