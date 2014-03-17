@@ -73,8 +73,10 @@ void testEdgeID()
 				auto horiz = Edge::horizontal({x, y});
 				int horizID = edgeID(width, height, horiz);
 				auto reconHorizEdge = edge(width, height, horizID);
+				assert(!seen.count(horizID));
 				seen.insert(horizID);
 				assert(reconHorizEdge == horiz);
+
 				std::cout << horiz << " -> " << horizID << " -> " << reconHorizEdge << "\n";
 			}
 
@@ -84,6 +86,7 @@ void testEdgeID()
 				auto vert = Edge::vertical({x, y});
 				int vertID = edgeID(width, height, vert);
 				auto reconVertEdge = edge(width, height, vertID);
+				assert(!seen.count(vertID));
 				seen.insert(vertID);
 				assert(reconVertEdge == vert);
 	
