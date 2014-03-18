@@ -1,8 +1,14 @@
 
-#include "edgeid.hpp"
-#include "ece556.hpp"
 #include <set>
 #include <iostream>
+#include <cassert>
+#include <cmath>
+#include <algorithm>
+
+#include "edgeid.hpp"
+#include "ece556.hpp"
+
+
 
 int horizontalEdgeID(int width, int height, int x, int y);
 int verticalEdgeID(int width, int height, int x, int y);

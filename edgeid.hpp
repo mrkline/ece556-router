@@ -2,10 +2,6 @@
 #ifndef EDGEID_HPP_NK084F
 #define EDGEID_HPP_NK084F
 
-#include <cassert>
-#include <cmath>
-#include <algorithm>
-
 struct Edge;
 
 /// Convert a line segment of length one into an edge ID.
