@@ -7,6 +7,8 @@
 #include "edgeid.hpp"
 #include "util.hpp"
 
+#define ABS(a) ((a) > 0 ? (a) : -(a))
+
 /// Represents a 2D Point
 struct Point {
 
@@ -17,6 +19,32 @@ struct Point {
 	{
 		return x == that.x && y == that.y;
 	}
+	bool operator !=(const Point &that) const
+	{
+		return x != that.x || y != that.y;
+	}
+};
+
+struct PointHash {
+	std::size_t operator()(const Point& p) const
+	{
+		return (std::hash<int>()(p.x) >> 1) ^ (std::hash<int>()(p.y) << 1);
+	}
+};
+
+
+struct GoalComp {
+	Point goal;
+
+	inline int _goalDist(const Point& p) const
+	{
+		return ABS(p.x - goal.x) + ABS(p.y - goal.y);
+	}
+
+	bool operator()(const Point& p1, const Point& p2) const
+	{
+		return _goalDist(p1) > _goalDist(p2);
+	}
 };
 
 
@@ -24,7 +52,6 @@ struct Point {
 /// This is not, strictly speaking, a line segment, but is actually a linear spline (a collection of
 /// connected line segments).
 struct Segment {
-
 	Point p1 ; ///< start point of a segment
 	Point p2 ; ///< end point of a segment
 	
@@ -77,6 +104,20 @@ struct RoutingInst {
 	int numEdges; ///< number of edges of the grid
 	std::vector<int> edgeCaps; ///< array of the actual edge capacities after considering for blockage
 	std::vector<int> edgeUtils; ///< array of edge utilizations
+
+
+	std::vector<Point> findNeighbors(const Point& p0);
+	void aStarSegRoute(Segment& s);
+	void decomposeNet(Net& n);
+	void routeNet(Net& n);
+	void placeRoute(const Net& n);
+	Route ripNet(Net& n);
+	int countViolations();
+	bool routeValid(Route& r, bool isplaced);
+	void solveRouting();
+	void writeOutput(const char *outRouteFile);
+	void toSvg(const std::string& fileName);
+	
 
 	int edgeID(const Point &p1, const Point &p2) const
 	{

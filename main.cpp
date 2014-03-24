@@ -57,10 +57,10 @@ int main(int argc, char** argv)
 		readBenchmark(inputFileName, rst);
 
 		/// run actual routing
-		solveRouting(rst);
+		rst.solveRouting();
 
 		/// write the result
-		writeOutput(outputFileName, rst);
+		rst.writeOutput(outputFileName);
 
 		printf("\nDONE!\n");
 		return 0;
