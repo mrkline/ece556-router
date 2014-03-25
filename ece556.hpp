@@ -7,7 +7,8 @@
 #include "edgeid.hpp"
 #include "util.hpp"
 
-#define ABS(a) ((a) > 0 ? (a) : -(a))
+template <typename T>
+inline T abs(T a) { return a > T(0) ? a : -a; }
 
 /// Represents a 2D Point
 struct Point {
@@ -38,7 +39,7 @@ struct GoalComp {
 
 	inline int _goalDist(const Point& p) const
 	{
-		return ABS(p.x - goal.x) + ABS(p.y - goal.y);
+		return abs(p.x - goal.x) + abs(p.y - goal.y);
 	}
 
 	bool operator()(const Point& p1, const Point& p2) const
