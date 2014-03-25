@@ -2,13 +2,11 @@
 
 #pragma once
 
+#include <cstdlib> // for integer abs
 #include <vector>
 #include <iosfwd>
 #include "edgeid.hpp"
 #include "util.hpp"
-
-template <typename T>
-inline T abs(T a) { return a > T(0) ? a : -a; }
 
 /// Represents a 2D Point
 struct Point {
