@@ -47,8 +47,8 @@ std::vector<Point> RoutingInst::findNeighbors(const Point& p0)
 	return neighbors;
 }
 
-// Use A* search to route a segment
-void RoutingInst::aStarSegRoute(Segment& s)
+// Use A* search to route a segment with a maximum of aggressiveness violation on each edge
+bool RoutingInst::_aStarRouteSeg(Segment& s, int aggressiveness)
 {
 	std::unordered_set<Point, PointHash> open, closed;
 	std::priority_queue<Point, std::vector<Point>, GoalComp>
@@ -63,9 +63,8 @@ void RoutingInst::aStarSegRoute(Segment& s)
 	open.insert(s.p1);
 	open_score.push(s.p1);
 
-	// stop only when the 'end' node is reached
-	// TODO: need a bail-out if it takes too long!!
-	while (!closed.count(s.p2)) {
+	// stop when end node is reach or when all nodes are explored
+	while (!closed.count(s.p2) && !open.empty()) {
 		// move top canidate to 'closed' and evaluate neighbors
 		p0 = open_score.top();
 		open_score.pop();
@@ -81,7 +80,7 @@ void RoutingInst::aStarSegRoute(Segment& s)
 			}
 
 			// skip blocked edges
-			if (edgeUtil(p, p0) >= edgeCap(p, p0)) {
+			if (edgeUtil(p, p0) >= edgeCap(p, p0) + aggressiveness) {
 				continue;
 			}
 
@@ -92,24 +91,74 @@ void RoutingInst::aStarSegRoute(Segment& s)
 		}
 	}
 
+	// couldn't route without violation... BAIL!!
+	if (!closed.count(s.p2)) {
+		return false;
+	}
+
 	// Walk backwards to create route
 	for (p = s.p2; p != s.p1; p = prev[p]) {
 		s.edges.push_back(edgeID(p, prev[p]));
 	}
+
+	return true;
 }
 
-// decompose pins for an unrouted net into unrouted segments
+void RoutingInst::aStarRouteSeg(Segment& s)
+{
+	int a = 0;
+	while (!_aStarRouteSeg(s, a++)) {
+		std::cout << "GETTING MORE AGGRESSIVE!!\n";
+	}
+	return;
+}
+
+// decompose pins into a MST based on L1 distance
 void RoutingInst::decomposeNet(Net& n)
 {
-	unsigned int i;
 	Segment s;
+	std::unordered_map<Point, Point, PointHash> adj;
+	std::unordered_map<Point, int, PointHash> dist;
+	std::unordered_set<Point, PointHash> q;
+
+	Point p0;
+	int min, t;
 
 	assert(n.nroute.empty());
 
-	for (i = 1; i < n.pins.size(); i++) {
-		s.p1 = n.pins[i - 1];
-		s.p2 = n.pins[i];
+	// place the first node in the tree
+	p0 = n.pins[0];
+	for (const auto &p : n.pins) {
+		q.insert(p);
+		adj[p] = p0;
+		dist[p] = p0.l1dist(p);
+	}
+	q.erase(p0);
+
+	while (!q.empty()) {
+		// find the non-tree node closest to a tree node
+		p0 = *q.begin(); min = dist[p0];
+		for (const auto &p : q) {
+			if (dist[p] <= min) {
+				p0 = p;
+				min = dist[p];
+			}
+		}
+
+		// attach the non-tree node to its closest tree neighbor
+		q.erase(p0);
+		s.p1 = p0;
+		s.p2 = adj[p0];
 		n.nroute.push_back(s);
+
+		// the tree has a new node; update the map of closest nodes
+		for (const auto &p : q) {
+			t = p0.l1dist(p);
+			if (t < dist[p]) {
+				adj[p] = p0;
+				dist[p] = t;
+			}
+		}
 	}
 }
 
@@ -120,16 +169,22 @@ void RoutingInst::routeNet(Net& n)
 
 	decomposeNet(n);
 	for (auto &s : n.nroute) {
-		// TODO: deal with conflicts between unrouted segments??
-		aStarSegRoute(s);
+		aStarRouteSeg(s);
 	}
+	// TODO: should inter-segment conflict be handled here, or elsewhere?
 }
 
-void RoutingInst::placeRoute(const Net& n)
+void RoutingInst::placeNet(const Net& n)
 {
+	std::unordered_set<int> placed;
+
 	for (const auto s : n.nroute) {
-		for (const auto i : s.edges) {
-			getElementResizingIfNecessary(edgeUtils, i, 0)++;
+		for (const auto edge : s.edges) {
+			if (placed.count(edge)) {
+				continue;
+			}
+			getElementResizingIfNecessary(edgeUtils, edge, 0)++;
+			placed.insert(edge);
 		}
 	}
 }
@@ -137,10 +192,16 @@ void RoutingInst::placeRoute(const Net& n)
 // rip up the route from an old net and return it
 Route RoutingInst::ripNet(Net& n)
 {
+	std::unordered_set<int> ripped;
 	Route old;
+
 	for (const auto &s : n.nroute) {
-		for (const auto i : s.edges) {
-			getElementResizingIfNecessary(edgeUtils, i, 0)--;
+		for (const auto edge : s.edges) {
+			if (ripped.count(edge)) {
+				continue;
+			}
+			getElementResizingIfNecessary(edgeUtils, edge, 0)--;
+			ripped.insert(edge);
 		}
 	}
 	n.nroute.swap(old);
@@ -166,6 +227,28 @@ bool RoutingInst::routeValid(Route& r, bool isplaced)
 	return false;
 }
 
+void RoutingInst::violationSvg(const std::string& fileName)
+{
+	std::ofstream svg(fileName);
+	Edge e;
+
+	svg << "<svg xmlns=\"http://www.w3.org/2000/svg\"";
+	svg << "	xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n";
+
+	svg << "\t<path d=\"";
+	for (unsigned int i = 0; i < edgeUtils.size(); i++) {
+		e = edge(i);
+		if (edgeUtil(e.p1, e.p2) > edgeCap(e.p1, e.p2)) {
+			svg << " M" << e.p1.x << "," << e.p1.y;
+			svg << " L" << e.p2.x << "," << e.p2.y;
+		}
+	}
+	svg << "\" style=\"stroke:#FF0000; fill:none;\"/>\n";
+	svg << "</svg>";
+	svg.close();
+	
+}
+
 void RoutingInst::toSvg(const std::string& fileName)
 {
 	std::ofstream svg(fileName);
@@ -179,8 +262,8 @@ void RoutingInst::toSvg(const std::string& fileName)
 			svg << "\t<path d=\"";
 			for (const auto i : s.edges) {
 				e = edge(i);
-				svg << "M" << e.p1.x * 2 << "," << e.p1.y * 2;
-				svg << " L" << e.p2.x * 2 << "," << e.p2.y * 2;
+				svg << " M" << e.p1.x << "," << e.p1.y;
+				svg << " L" << e.p2.x << "," << e.p2.y;
 			}
 			svg << "\" style=\"stroke:#FF0000; fill:none;\"/>\n";
 		}
@@ -190,19 +273,36 @@ void RoutingInst::toSvg(const std::string& fileName)
 	
 }
 
+void RoutingInst::reorderNets()
+{
+
+
+}
+
 void RoutingInst::solveRouting()
 {
 	std::stringstream ss;
 
+	reorderNets();
+	int i = 0;
+
 	// find an initial solution
 	for (auto &n : nets) {
+		//if (n.id != 12660) continue;
+		std::cout << n.id << "\n";
 		routeNet(n);
-		placeRoute(n);
+		placeNet(n);
 
-		ss.str("net_");
-		ss << n.id << ".svg";
-		toSvg(ss.str());
+		//ss.str("net_");
+		//ss << n.id << ".svg";
+		//toSvg(ss.str());
+		if (i++ > 20000) break;;
 	}
+
+	/*for (auto &n : nets) {
+		placeRoute(n);
+	}*/
+	violationSvg("violations.svg");
 
 	// find violators
 	/*for (const auto &n : rst.nets)

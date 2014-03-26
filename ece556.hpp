@@ -15,6 +15,11 @@ struct Point {
 	int x; ///< x coordinate ( >=0 in the routing grid)
 	int y; ///< y coordinate ( >=0 in the routing grid)
 
+	int l1dist(const Point& p) const
+	{
+		return ABS(x - p.x) + ABS(y - p.y);
+	}
+
 	bool operator ==(const Point &that) const
 	{
 		return x == that.x && y == that.y;
@@ -36,17 +41,11 @@ struct PointHash {
 struct GoalComp {
 	Point goal;
 
-	inline int _goalDist(const Point& p) const
-	{
-		return ABS(p.x - goal.x) + ABS(p.y - goal.y);
-	}
-
 	bool operator()(const Point& p1, const Point& p2) const
 	{
-		return _goalDist(p1) > _goalDist(p2);
+		return goal.l1dist(p1) > goal.l1dist(p2);
 	}
 };
-
 
 /// A segment consisting of two points and edges
 /// This is not, strictly speaking, a line segment, but is actually a linear spline (a collection of
@@ -107,15 +106,18 @@ struct RoutingInst {
 
 
 	std::vector<Point> findNeighbors(const Point& p0);
-	void aStarSegRoute(Segment& s);
+	bool _aStarRouteSeg(Segment& s, int aggressiveness);
+	void aStarRouteSeg(Segment& s);
 	void decomposeNet(Net& n);
 	void routeNet(Net& n);
-	void placeRoute(const Net& n);
+	void placeNet(const Net& n);
 	Route ripNet(Net& n);
 	int countViolations();
 	bool routeValid(Route& r, bool isplaced);
+	void reorderNets();
 	void solveRouting();
 	void writeOutput(const char *outRouteFile);
+	void violationSvg(const std::string& fileName);
 	void toSvg(const std::string& fileName);
 	
 
@@ -152,7 +154,6 @@ struct RoutingInst {
 		return getElementOrDefault(edgeCaps, edgeID(p1, p2), cap);
 	}
 };
-
 
 /**
  * \brief Read in the benchmark file and initialize the routing instance.
