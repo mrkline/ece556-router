@@ -2,12 +2,11 @@
 
 #pragma once
 
+#include <cstdlib> // for integer abs
 #include <vector>
 #include <iosfwd>
 #include "edgeid.hpp"
 #include "util.hpp"
-
-#define ABS(a) ((a) > 0 ? (a) : -(a))
 
 /// Represents a 2D Point
 struct Point {
@@ -17,7 +16,7 @@ struct Point {
 
 	int l1dist(const Point& p) const
 	{
-		return ABS(x - p.x) + ABS(y - p.y);
+		return abs(x - p.x) + abs(y - p.y);
 	}
 
 	bool operator ==(const Point &that) const
