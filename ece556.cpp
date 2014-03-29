@@ -8,6 +8,8 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <cstring>
+#include <iomanip>
+#include <ctime>
 
 #include "ece556.hpp"
 #include "reader.hpp"
@@ -21,6 +23,23 @@ void readBenchmark(const char *fileName, RoutingInst& rst)
 		throw std::runtime_error("I/O Error");
 	}
 	rst = readRoutingInst(in);
+}
+
+bool RoutingInst::neighbor(Point &p, unsigned int caseNumber)
+{
+	switch(caseNumber)
+	{
+		case 0:
+			return --p.x >= 0;
+		case 1:
+			return ++p.x < gx;
+		case 2:
+			return --p.y >= 0;
+		case 3:
+			return ++p.y < gy;
+		default:
+			return false;
+	}
 }
 
 std::vector<Point> RoutingInst::findNeighbors(const Point& p0)
@@ -49,14 +68,104 @@ std::vector<Point> RoutingInst::findNeighbors(const Point& p0)
 	return neighbors;
 }
 
+
+bool RoutingInst::fastAStarRoute(Segment &s, int overflowTolerance)
+{
+	enum Color
+	{
+		Open, Closed, Unexplored
+	};
+	struct PointInfo
+	{
+		Color color;
+		Point pred;
+		int gscore;
+		int fscore;
+		
+		PointInfo()
+		: color(Unexplored)
+		, gscore(0)
+		, fscore(0)
+		{ }
+	};
+	
+	GoalComp heuristic{s.p2};
+	std::priority_queue<Point, std::vector<Point>, GoalComp>
+		open_score(heuristic);
+	static std::unordered_map<Point, PointInfo, PointHash> info;
+
+	info.clear();
+	open_score.push(s.p1);
+	
+	auto &p1info = info[s.p1];
+	p1info.color = Open;
+	open_score.push(s.p1);
+	p1info.fscore = p1info.gscore + heuristic(s.p1, s.p2);
+	
+	while(!open_score.empty())
+	{
+		auto current = open_score.top();
+		open_score.pop();
+		
+		if(current == s.p2)
+		{
+			for(auto p = s.p2; p != s.p1; )
+			{
+				auto &pInfo = info[p];
+				s.edges.push_back(edgeID(p, pInfo.pred));
+				p = pInfo.pred;
+			}
+			return true;
+		}
+		
+		auto &currentInfo = info[current];
+		currentInfo.color = Closed;
+		
+		for(unsigned int neighborCase = 0; neighborCase < 4; ++neighborCase)
+		{
+			auto neighbor = current;
+			if(!this->neighbor(neighbor, neighborCase)) continue;
+			
+			auto &neighborInfo = info[neighbor];
+			if(neighborInfo.color == Closed) continue;
+			
+			if (edgeUtil(neighbor, current) >= edgeCap(neighbor, current) + overflowTolerance) {
+				neighborInfo.color = Closed;
+			}
+			
+			int tentativeGScore = currentInfo.gscore + current.l1dist(neighbor);
+			
+			if(neighborInfo.color != Open || tentativeGScore < neighborInfo.gscore)
+			{
+				neighborInfo.pred = current;
+				neighborInfo.gscore = tentativeGScore;
+				neighborInfo.fscore = neighborInfo.gscore + heuristic(neighbor, s.p2);
+				if(neighborInfo.color != Open)
+				{
+					neighborInfo.color = Open;
+					open_score.push(neighbor);
+				}
+			}
+		}
+	}
+	
+	return false;
+}
+
 // Use A* search to route a segment with a maximum of aggressiveness violation on each edge
 bool RoutingInst::_aStarRouteSeg(Segment& s, int aggressiveness)
 {
-	std::unordered_set<Point, PointHash> open, closed;
+	static std::unordered_set<Point, PointHash> open, closed;
 	std::priority_queue<Point, std::vector<Point>, GoalComp>
 		open_score(GoalComp{s.p2});
-	std::unordered_map<Point, Point, PointHash> prev;
-	std::vector<Point> neighbors;
+	static std::unordered_map<Point, Point, PointHash> prev;
+	static std::vector<Point> neighbors;
+	
+	open.clear();
+	closed.clear();
+	prev.clear();
+	neighbors.clear();
+	
 	Point p0, p;
 
 	assert(s.edges.empty());
@@ -74,8 +183,13 @@ bool RoutingInst::_aStarRouteSeg(Segment& s, int aggressiveness)
 		closed.insert(p0);
 
 		// add valid neighbors
-		neighbors = findNeighbors(p0);
-		for (const auto &p : neighbors) {
+// 		neighbors = findNeighbors(p0);
+// 		for (const auto &p : neighbors) {
+
+		for(unsigned int neighborCase = 0; neighborCase < 4; ++neighborCase) {
+			Point p = p0;
+			if(!neighbor(p, neighborCase)) continue;
+			
 			// skip previously/currently examined
 			if (closed.count(p) || open.count(p)) {
 				continue;
@@ -109,8 +223,9 @@ bool RoutingInst::_aStarRouteSeg(Segment& s, int aggressiveness)
 void RoutingInst::aStarRouteSeg(Segment& s)
 {
 	int a = 0;
-	while (!_aStarRouteSeg(s, a++)) {
-		std::cout << "GETTING MORE AGGRESSIVE!!\n";
+// 	while (!_aStarRouteSeg(s, a++)) {
+	while(!fastAStarRoute(s, a++)) {
+// 		std::cout << "GETTING MORE AGGRESSIVE!!\n";
 	}
 	return;
 }
@@ -119,9 +234,13 @@ void RoutingInst::aStarRouteSeg(Segment& s)
 void RoutingInst::decomposeNet(Net& n)
 {
 	Segment s;
-	std::unordered_map<Point, Point, PointHash> adj;
-	std::unordered_map<Point, int, PointHash> dist;
-	std::unordered_set<Point, PointHash> q;
+	static std::unordered_map<Point, Point, PointHash> adj;
+	static std::unordered_map<Point, int, PointHash> dist;
+	static std::unordered_set<Point, PointHash> q;
+	
+	adj.clear();
+	dist.clear();
+	q.clear();
 
 	Point p0;
 	int min, t;
@@ -178,7 +297,8 @@ void RoutingInst::routeNet(Net& n)
 
 void RoutingInst::placeNet(const Net& n)
 {
-	std::unordered_set<int> placed;
+	static std::unordered_set<int> placed;
+	placed.clear();
 
 	for (const auto s : n.nroute) {
 		for (const auto edge : s.edges) {
@@ -287,18 +407,40 @@ void RoutingInst::solveRouting()
 
 	reorderNets();
 	int i = 0;
-
+	
+	int barWidth = 60;
+	int barDivisor = nets.size() / barWidth;
+	int startTime = std::time(0);
+	
+	std::cout << "\n\n\n\n";
 	// find an initial solution
 	for (auto &n : nets) {
 		//if (n.id != 12660) continue;
-		std::cout << n.id << "\n";
+// 		std::cout << n.id << "\n";
 		routeNet(n);
 		placeNet(n);
-
-		//ss.str("net_");
-		//ss << n.id << ".svg";
-		//toSvg(ss.str());
-		if (i++ > 20000) break;;
+		
+		if((i++ % 512) == 0)
+		{
+			int width = i / barDivisor;
+			std::cout << "\033[3A\033[1G" << std::flush;
+			std::cout << std::setw(4) << i * 100 / nets.size() << " ";
+			for(int j = 0; j < width; ++j)
+			{
+				std::cout << "#";
+			}
+			
+			std::cout << "\nNets routed: " << i << "/" << nets.size();
+			std::cout << "\nElapsed time: " << std::time(0) - startTime << " seconds\n";
+			
+		}
+		
+// 		if((i % 2048) == 0) {
+// 			ss.str("net_");
+// 			ss << n.id << ".svg";
+// 			toSvg(ss.str());
+// 		}
+// 		if (i > 20000) break;;
 	}
 
 	/*for (auto &n : nets) {

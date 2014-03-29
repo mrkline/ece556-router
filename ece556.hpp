@@ -107,7 +107,12 @@ struct RoutingInst {
 
 
 	std::vector<Point> findNeighbors(const Point& p0);
+	
+	bool neighbor(Point &p, unsigned int caseNumber);
+	
 	bool _aStarRouteSeg(Segment& s, int aggressiveness);
+	bool fastAStarRoute(Segment &s, int overflowTolerance);
+	
 	void aStarRouteSeg(Segment& s);
 	void decomposeNet(Net& n);
 	void routeNet(Net& n);
