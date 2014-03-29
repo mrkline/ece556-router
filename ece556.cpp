@@ -131,6 +131,7 @@ bool RoutingInst::fastAStarRoute(Segment &s, int overflowTolerance)
 			
 			if (edgeUtil(neighbor, current) >= edgeCap(neighbor, current) + overflowTolerance) {
 				neighborInfo.color = Closed;
+				continue;
 			}
 			
 			int tentativeGScore = currentInfo.gscore + current.l1dist(neighbor);
