@@ -69,90 +69,6 @@ std::vector<Point> RoutingInst::findNeighbors(const Point& p0)
 }
 
 
-bool RoutingInst::fastAStarRoute(Segment &s, int overflowTolerance)
-{
-	enum Color
-	{
-		Open, Closed, Unexplored
-	};
-	struct PointInfo
-	{
-		Color color;
-		Point pred;
-		int gscore;
-		int fscore;
-		
-		PointInfo()
-		: color(Unexplored)
-		, gscore(0)
-		, fscore(0)
-		{ }
-	};
-	
-	GoalComp heuristic{s.p2};
-	std::priority_queue<Point, std::vector<Point>, GoalComp>
-		open_score(heuristic);
-	static std::unordered_map<Point, PointInfo, PointHash> info;
-
-	info.clear();
-	open_score.push(s.p1);
-	
-	auto &p1info = info[s.p1];
-	p1info.color = Open;
-	open_score.push(s.p1);
-	p1info.fscore = p1info.gscore + heuristic(s.p1, s.p2);
-	
-	while(!open_score.empty())
-	{
-		auto current = open_score.top();
-		open_score.pop();
-		
-		if(current == s.p2)
-		{
-			for(auto p = s.p2; p != s.p1; )
-			{
-				auto &pInfo = info[p];
-				s.edges.push_back(edgeID(p, pInfo.pred));
-				p = pInfo.pred;
-			}
-			return true;
-		}
-		
-		auto &currentInfo = info[current];
-		currentInfo.color = Closed;
-		
-		for(unsigned int neighborCase = 0; neighborCase < 4; ++neighborCase)
-		{
-			auto neighbor = current;
-			if(!this->neighbor(neighbor, neighborCase)) continue;
-			
-			auto &neighborInfo = info[neighbor];
-			if(neighborInfo.color == Closed) continue;
-			
-			if (edgeUtil(neighbor, current) >= edgeCap(neighbor, current) + overflowTolerance) {
-				neighborInfo.color = Closed;
-				continue;
-			}
-			
-			int tentativeGScore = currentInfo.gscore + current.l1dist(neighbor);
-			
-			if(neighborInfo.color != Open || tentativeGScore < neighborInfo.gscore)
-			{
-				neighborInfo.pred = current;
-				neighborInfo.gscore = tentativeGScore;
-				neighborInfo.fscore = neighborInfo.gscore + heuristic(neighbor, s.p2);
-				if(neighborInfo.color != Open)
-				{
-					neighborInfo.color = Open;
-					open_score.push(neighbor);
-				}
-			}
-		}
-	}
-	
-	return false;
-}
-
 // Use A* search to route a segment with a maximum of aggressiveness violation on each edge
 bool RoutingInst::_aStarRouteSeg(Segment& s, int aggressiveness)
 {
@@ -223,11 +139,9 @@ bool RoutingInst::_aStarRouteSeg(Segment& s, int aggressiveness)
 
 void RoutingInst::aStarRouteSeg(Segment& s)
 {
-	int a = 0;
-// 	while (!_aStarRouteSeg(s, a++)) {
-	while(!fastAStarRoute(s, a++)) {
-// 		std::cout << "GETTING MORE AGGRESSIVE!!\n";
-	}
+	while (!_aStarRouteSeg(s, aggression++)) { }
+	
+	if(aggression > 0) aggression--; // decay
 	return;
 }
 

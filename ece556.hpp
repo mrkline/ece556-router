@@ -98,6 +98,7 @@ struct RoutingInst {
 	int gy; ///< y dimension of the global routing grid
 
 	int cap;
+	int aggression;
 
 	std::vector<Net> nets;
 
@@ -111,7 +112,6 @@ struct RoutingInst {
 	bool neighbor(Point &p, unsigned int caseNumber);
 	
 	bool _aStarRouteSeg(Segment& s, int aggressiveness);
-	bool fastAStarRoute(Segment &s, int overflowTolerance);
 	
 	void aStarRouteSeg(Segment& s);
 	void decomposeNet(Net& n);
