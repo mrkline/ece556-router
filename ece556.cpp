@@ -1,15 +1,16 @@
 // ECE556 - Copyright 2014 University of Wisconsin-Madison.  All Rights Reserved.
 
+#include <algorithm>
 #include <cassert>
+#include <cstring>
+#include <ctime>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
-#include <sstream>
 #include <queue>
+#include <sstream>
 #include <unordered_map>
 #include <unordered_set>
-#include <cstring>
-#include <iomanip>
-#include <ctime>
 
 
 #include "ece556.hpp"
