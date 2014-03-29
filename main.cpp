@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <iostream>
 
+
 static void testReadingInput()
 {
 	try {

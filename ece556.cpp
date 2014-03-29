@@ -11,6 +11,7 @@
 #include <iomanip>
 #include <ctime>
 
+
 #include "ece556.hpp"
 #include "reader.hpp"
 #include "writer.hpp"
@@ -139,9 +140,47 @@ bool RoutingInst::_aStarRouteSeg(Segment& s, int aggressiveness)
 
 void RoutingInst::aStarRouteSeg(Segment& s)
 {
-	while (!_aStarRouteSeg(s, aggression++)) { }
+	int lo=0, hi=startHi;
+	int v=aggression;
+	int routed = -1;
+	int maxSuccessfulBisections = 2;
+	int successfulBisections = 0;
 	
-	if(aggression > 0) aggression--; // decay
+	Segment soln;
+	while(routed < 0) {
+		while(hi - lo > 1) {
+			s.edges.clear();
+			if(_aStarRouteSeg(s, v)) {
+				soln = s;
+				hi = v;
+				routed = v;
+				successfulBisections++;
+			}
+			else {
+				lo = v;
+			}
+			v = (lo + hi) / 2;
+			
+			if(successfulBisections >= maxSuccessfulBisections) {
+				v = hi;
+				goto exit;
+			}
+		}
+		
+		hi += 10;
+		if(hi > startHi) {
+			startHi = hi;
+		}
+	}
+exit:
+	s = soln;
+	if(v > aggression) {
+		aggression = v;
+	}
+	
+// 	while (!_aStarRouteSeg(s, aggression++)) { }
+	
+// 	if(aggression > 0) aggression--; // decay
 	return;
 }
 
@@ -336,18 +375,26 @@ void RoutingInst::solveRouting()
 		routeNet(n);
 		placeNet(n);
 		
-		if((i++ % 512) == 0)
+		++i;
+// 		if((i++ % 512) == 0)
 		{
 			int width = i / barDivisor;
 			std::cout << "\033[3A\033[1G" << std::flush;
-			std::cout << std::setw(4) << i * 100 / nets.size() << " ";
+			std::cout << "\033[0K" << std::setw(4) << i * 100 / nets.size() << " ";
 			for(int j = 0; j < width; ++j)
 			{
 				std::cout << "#";
 			}
+			for(int j = width; j < barWidth; ++j)
+			{
+				std::cout << "-";
+			}
 			
-			std::cout << "\nNets routed: " << i << "/" << nets.size();
-			std::cout << "\nElapsed time: " << std::time(0) - startTime << " seconds\n";
+			std::cout << "|";
+			
+			std::cout << "\n\033[0KNets routed: " << i << "/" << nets.size();
+			std::cout << "\n\033[0KElapsed time: " << std::time(0) - startTime << " seconds. " 
+				<< "Aggression level: " <<  aggression << ". Bisect max: " << startHi << ".\n";
 			
 		}
 		

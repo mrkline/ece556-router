@@ -99,6 +99,7 @@ struct RoutingInst {
 
 	int cap;
 	int aggression;
+	int startHi = 10;
 
 	std::vector<Net> nets;
 
