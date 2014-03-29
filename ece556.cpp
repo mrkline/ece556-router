@@ -7,9 +7,11 @@
 #include <queue>
 #include <unordered_map>
 #include <unordered_set>
+#include <cstring>
 
 #include "ece556.hpp"
 #include "reader.hpp"
+#include "writer.hpp"
 #include "util.hpp"
 
 void readBenchmark(const char *fileName, RoutingInst& rst)
@@ -330,9 +332,23 @@ void RoutingInst::solveRouting()
 	}*/
 }
 
+static std::string strerrno()
+{
+	return std::strerror(errno);
+}
+
 void RoutingInst::writeOutput(const char *outRouteFile)
 {
-	(void)outRouteFile;
+	std::ofstream out(outRouteFile);
+	if(!out) {
+		throw std::runtime_error(std::string("opening ") + outRouteFile + ": " + strerrno());
+	}
+	write(out, *this);
+	out.close(); // close explicitly to allow for printing a warning message if it fails
+	
+	if(!out) {
+		std::cerr << "warning: error closing file: " << strerrno() << "\n";
+	}
 }
 
 
