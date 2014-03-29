@@ -8,7 +8,7 @@ OBJS := $(patsubst %.cpp,%.o, $(wildcard *.cpp))
 debug: CXXFLAGS += -g
 debug: route
 
-profile: CXXFLAGS += -g -pg
+profile: CXXFLAGS += -O3 -g -pg
 profile: route
 
 release: CXXFLAGS+= -O4 -DNDEBUG
