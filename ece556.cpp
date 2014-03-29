@@ -64,8 +64,8 @@ bool RoutingInst::_aStarRouteSeg(Segment& s, int aggressiveness)
 	assert(s.edges.empty());
 
 	// only the start node is initially open
-	open.insert(s.p1);
-	open_score.push(s.p1);
+	open.emplace(s.p1);
+	open_score.emplace(s.p1);
 
 	// stop when end node is reach or when all nodes are explored
 	while (!closed.count(s.p2) && !open.empty()) {
@@ -73,7 +73,7 @@ bool RoutingInst::_aStarRouteSeg(Segment& s, int aggressiveness)
 		p0 = open_score.top();
 		open_score.pop();
 		open.erase(p0);
-		closed.insert(p0);
+		closed.emplace(p0);
 
 		// add valid neighbors
 		for(unsigned int neighborCase = 0; neighborCase < 4; ++neighborCase) {
@@ -91,8 +91,8 @@ bool RoutingInst::_aStarRouteSeg(Segment& s, int aggressiveness)
 			}
 
 			// queue valid neighbors for future examination
-			open.insert(p);
-			open_score.push(p);
+			open.emplace(p);
+			open_score.emplace(p);
 			prev[p] = p0;
 		}
 	}
@@ -104,7 +104,7 @@ bool RoutingInst::_aStarRouteSeg(Segment& s, int aggressiveness)
 
 	// Walk backwards to create route
 	for (p = s.p2; p != s.p1; p = prev[p]) {
-		s.edges.push_back(edgeID(p, prev[p]));
+		s.edges.emplace_back(edgeID(p, prev[p]));
 	}
 
 	return true;
@@ -171,7 +171,7 @@ void RoutingInst::decomposeNet(Net& n)
 	// place the first node in the tree
 	p0 = n.pins[0];
 	for (const auto &p : n.pins) {
-		q.insert(p);
+		q.emplace(p);
 		adj[p] = p0;
 		dist[p] = p0.l1dist(p);
 	}
@@ -191,7 +191,7 @@ void RoutingInst::decomposeNet(Net& n)
 		q.erase(p0);
 		s.p1 = p0;
 		s.p2 = adj[p0];
-		n.nroute.push_back(s);
+		n.nroute.emplace_back(s);
 
 		// the tree has a new node; update the map of closest nodes
 		for (const auto &p : q) {
@@ -227,7 +227,7 @@ void RoutingInst::placeNet(const Net& n)
 				continue;
 			}
 			getElementResizingIfNecessary(edgeUtils, edge, 0)++;
-			placed.insert(edge);
+			placed.emplace(edge);
 		}
 	}
 }
@@ -244,7 +244,7 @@ Route RoutingInst::ripNet(Net& n)
 				continue;
 			}
 			getElementResizingIfNecessary(edgeUtils, edge, 0)--;
-			ripped.insert(edge);
+			ripped.emplace(edge);
 		}
 	}
 	n.nroute.swap(old);
@@ -384,7 +384,7 @@ void RoutingInst::solveRouting()
 	// find violators
 	/*for (const auto &n : rst.nets)
 		if (hasViolations(n.route, rst))
-			v_nets.push(n);
+			v_nets.emplace(n);
 
 	// reorder nets (TODO)
 
@@ -402,7 +402,7 @@ void RoutingInst::solveRouting()
 		if (!hasViolators(rnew, false, rst))
 			n.nroute = rnew;
 		else
-			v_nets.push(n);
+			v_nets.emplace(n);
 		placeRoute(n.nroute, rst);
 	}*/
 }
