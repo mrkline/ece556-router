@@ -43,32 +43,6 @@ bool RoutingInst::neighbor(Point &p, unsigned int caseNumber)
 	}
 }
 
-std::vector<Point> RoutingInst::findNeighbors(const Point& p0)
-{
-	std::vector<Point> neighbors;
-	Point p;
-
-	// find neighbors
-	p = p0;
-	if (--p.x >= 0) {
-		neighbors.push_back(p);
-	}
-	p = p0;
-	if (++p.x < gx) {
-		neighbors.push_back(p);
-	}
-	p = p0;
-	if (--p.y >= 0) {
-		neighbors.push_back(p);
-	}
-	p = p0;
-	if (++p.y < gy) {
-		neighbors.push_back(p);
-	}
-
-	return neighbors;
-}
-
 
 // Use A* search to route a segment with a maximum of aggressiveness violation on each edge
 bool RoutingInst::_aStarRouteSeg(Segment& s, int aggressiveness)
