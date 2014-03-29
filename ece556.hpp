@@ -32,7 +32,6 @@ struct Point {
 struct PointHash {
 	std::size_t operator()(const Point& p) const
 	{
-		// TODO: check if this is true on tux machines
 		static_assert(sizeof(std::size_t) == 8, "sizeof size_t should be 8 bytes");
 		return static_cast<std::size_t>(p.x) | (static_cast<std::size_t>(p.y) << 32);
 	}
@@ -106,9 +105,6 @@ struct RoutingInst {
 	int numEdges; ///< number of edges of the grid
 	std::vector<int> edgeCaps; ///< array of the actual edge capacities after considering for blockage
 	std::vector<int> edgeUtils; ///< array of edge utilizations
-
-
-	std::vector<Point> findNeighbors(const Point& p0);
 	
 	bool neighbor(Point &p, unsigned int caseNumber);
 	
