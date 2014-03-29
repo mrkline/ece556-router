@@ -29,13 +29,16 @@ struct Point {
 	}
 };
 
-struct PointHash {
-	std::size_t operator()(const Point& p) const
-	{
-		static_assert(sizeof(std::size_t) == 8, "sizeof size_t should be 8 bytes");
-		return static_cast<std::size_t>(p.x) | (static_cast<std::size_t>(p.y) << 32);
-	}
-};
+namespace std {
+	template <>
+	struct hash<Point> {
+		std::size_t operator()(const Point& p) const
+		{
+			static_assert(sizeof(std::size_t) == 8, "sizeof size_t should be 8 bytes");
+			return static_cast<std::size_t>(p.x) | (static_cast<std::size_t>(p.y) << 32);
+		}
+	};
+}
 
 
 struct GoalComp {
