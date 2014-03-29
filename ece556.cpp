@@ -53,12 +53,12 @@ bool RoutingInst::_aStarRouteSeg(Segment& s, int aggressiveness)
 		open_score(GoalComp{s.p2});
 	static std::unordered_map<Point, Point, PointHash> prev;
 	static std::vector<Point> neighbors;
-	
+
 	open.clear();
 	closed.clear();
 	prev.clear();
 	neighbors.clear();
-	
+
 	Point p0, p;
 
 	assert(s.edges.empty());
@@ -79,12 +79,12 @@ bool RoutingInst::_aStarRouteSeg(Segment& s, int aggressiveness)
 		for(unsigned int neighborCase = 0; neighborCase < 4; ++neighborCase) {
 			Point p = p0;
 			if(!neighbor(p, neighborCase)) continue;
-			
+
 			// skip previously/currently examined
 			if (closed.count(p) || open.count(p)) {
 				continue;
 			}
-			
+
 			// skip blocked edges
 			if (edgeUtil(p, p0) >= edgeCap(p, p0) + aggressiveness) {
 				continue;
@@ -117,7 +117,7 @@ void RoutingInst::aStarRouteSeg(Segment& s)
 	int routed = -1;
 	int maxSuccessfulBisections = 1;
 	int successfulBisections = 0;
-	
+
 	Segment soln;
 	while(routed < 0) {
 		while(hi - lo > 1) {
@@ -132,13 +132,13 @@ void RoutingInst::aStarRouteSeg(Segment& s)
 				lo = v;
 			}
 			v = (lo + hi) / 2;
-			
+
 			if(successfulBisections >= maxSuccessfulBisections) {
 				v = hi;
 				goto exit;
 			}
 		}
-		
+
 		hi += 10;
 		if(hi > startHi) {
 			startHi = hi;
@@ -158,7 +158,7 @@ void RoutingInst::decomposeNet(Net& n)
 	static std::unordered_map<Point, Point, PointHash> adj;
 	static std::unordered_map<Point, int, PointHash> dist;
 	static std::unordered_set<Point, PointHash> q;
-	
+
 	adj.clear();
 	dist.clear();
 	q.clear();
@@ -289,7 +289,7 @@ void RoutingInst::violationSvg(const std::string& fileName)
 	svg << "\" style=\"stroke:#FF0000; fill:none;\"/>\n";
 	svg << "</svg>";
 	svg.close();
-	
+
 }
 
 void RoutingInst::toSvg(const std::string& fileName)
@@ -313,7 +313,7 @@ void RoutingInst::toSvg(const std::string& fileName)
 	}
 	svg << "</svg>";
 	svg.close();
-	
+
 }
 
 void RoutingInst::reorderNets()
@@ -332,11 +332,11 @@ void RoutingInst::solveRouting()
 
 	reorderNets();
 	int i = 0;
-	
+
 	int barWidth = 60;
 	int barDivisor = nets.size() / barWidth;
 	int startTime = std::time(0);
-	
+
 	std::cout << "\n\n\n\n";
 	// find an initial solution
 	for (auto &n : nets) {
@@ -344,7 +344,7 @@ void RoutingInst::solveRouting()
 // 		std::cout << n.id << "\n";
 		routeNet(n);
 		placeNet(n);
-		
+
 		++i;
 // 		if((i++ % 512) == 0)
 		{
@@ -359,15 +359,15 @@ void RoutingInst::solveRouting()
 			{
 				std::cout << "-";
 			}
-			
+
 			std::cout << "]";
-			
+
 			std::cout << "\n\033[0KNets routed: " << i << "/" << nets.size();
-			std::cout << "\n\033[0KElapsed time: " << std::time(0) - startTime << " seconds. " 
+			std::cout << "\n\033[0KElapsed time: " << std::time(0) - startTime << " seconds. "
 				<< "Aggression level: " <<  aggression << ". Bisect max: " << startHi << ". TOF: " << tof << "\n";
-			
+
 		}
-		
+
 // 		if((i % 2048) == 0) {
 // 			ss.str("net_");
 // 			ss << n.id << ".svg";
@@ -420,7 +420,7 @@ void RoutingInst::writeOutput(const char *outRouteFile)
 	}
 	write(out, *this);
 	out.close(); // close explicitly to allow for printing a warning message if it fails
-	
+
 	if(!out) {
 		std::cerr << "warning: error closing file: " << strerrno() << "\n";
 	}

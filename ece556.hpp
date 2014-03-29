@@ -53,7 +53,7 @@ struct GoalComp {
 struct Segment {
 	Point p1 ; ///< start point of a segment
 	Point p2 ; ///< end point of a segment
-	
+
 	std::vector<int> edges; ///< Edges representing the segment
 };
 
@@ -61,7 +61,7 @@ struct Segment {
 struct Edge {
 	Point p1, p2;
 
-	static Edge horizontal(Point p1) 
+	static Edge horizontal(Point p1)
 	{
 		return Edge{p1, {p1.x+1, p1.y}};
 	}
@@ -72,7 +72,7 @@ struct Edge {
 	}
 
 
-	bool operator ==(const Edge &that) const 
+	bool operator ==(const Edge &that) const
 	{
 		return p1 == that.p1 && p2 == that.p2;
 	}
@@ -89,17 +89,17 @@ struct Net {
 
 	std::vector<Point> pins; ///< pins (or terminals) of the net
 	Route nroute; ///< stored route for the net.
-	
+
 	int pinTourManhattan() const
 	{
 		int r = 0;
-		
+
 		for(auto begin = pins.begin(), it = pins.begin(), end = pins.end(); it != end; ++it) {
 			if(it != begin) {
 				r += it[-1].l1dist(it[0]);
 			}
 		}
-		
+
 		return r;
 	}
 };
@@ -119,11 +119,11 @@ struct RoutingInst {
 	int numEdges; ///< number of edges of the grid
 	std::vector<int> edgeCaps; ///< array of the actual edge capacities after considering for blockage
 	std::vector<int> edgeUtils; ///< array of edge utilizations
-	
+
 	bool neighbor(Point &p, unsigned int caseNumber);
-	
+
 	bool _aStarRouteSeg(Segment& s, int aggressiveness);
-	
+
 	void aStarRouteSeg(Segment& s);
 	void decomposeNet(Net& n);
 	void routeNet(Net& n);
@@ -136,7 +136,7 @@ struct RoutingInst {
 	void writeOutput(const char *outRouteFile);
 	void violationSvg(const std::string& fileName);
 	void toSvg(const std::string& fileName);
-	
+
 
 	int edgeID(const Point &p1, const Point &p2) const
 	{
