@@ -318,6 +318,7 @@ void RoutingInst::reorderNets()
 
 void RoutingInst::solveRouting()
 {
+	aggression = 0;
 	std::stringstream ss;
 
 	reorderNets();
