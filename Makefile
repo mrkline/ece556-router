@@ -11,7 +11,7 @@ debug: route
 profile: CXXFLAGS += -g -pg
 profile: route
 
-release: CXXFLAGS+= -O2 -DNDEBUG
+release: CXXFLAGS+= -Ofast -DNDEBUG
 release: route
 
 # link

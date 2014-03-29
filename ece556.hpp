@@ -32,7 +32,9 @@ struct Point {
 struct PointHash {
 	std::size_t operator()(const Point& p) const
 	{
-		return (std::hash<int>()(p.x) >> 1) ^ (std::hash<int>()(p.y) << 1);
+		// TODO: check if this is true on tux machines
+		static_assert(sizeof(std::size_t) == 8, "sizeof size_t should be 8 bytes");
+		return static_cast<std::size_t>(p.x) | (static_cast<std::size_t>(p.y) << 32);
 	}
 };
 
