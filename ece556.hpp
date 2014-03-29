@@ -89,6 +89,19 @@ struct Net {
 
 	std::vector<Point> pins; ///< pins (or terminals) of the net
 	Route nroute; ///< stored route for the net.
+	
+	int pinTourManhattan() const
+	{
+		int r = 0;
+		
+		for(auto begin = pins.begin(), it = pins.begin(), end = pins.end(); it != end; ++it) {
+			if(it != begin) {
+				r += it[-1].l1dist(it[0]);
+			}
+		}
+		
+		return r;
+	}
 };
 
 /// Represents a routing instance
@@ -99,6 +112,7 @@ struct RoutingInst {
 	int cap;
 	int aggression;
 	int startHi = 10;
+	int tof = 0;
 
 	std::vector<Net> nets;
 
