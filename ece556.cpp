@@ -48,16 +48,11 @@ bool RoutingInst::neighbor(Point &p, unsigned int caseNumber)
 // Use A* search to route a segment with a maximum of aggressiveness violation on each edge
 bool RoutingInst::_aStarRouteSeg(Segment& s, int aggressiveness)
 {
-	static std::unordered_set<Point> open, closed;
+	std::unordered_set<Point> open, closed;
 	std::priority_queue<Point, std::vector<Point>, GoalComp>
 		open_score(GoalComp{s.p2});
-	static std::unordered_map<Point, Point> prev;
-	static std::vector<Point> neighbors;
-
-	open.clear();
-	closed.clear();
-	prev.clear();
-	neighbors.clear();
+	std::unordered_map<Point, Point> prev;
+	std::vector<Point> neighbors;
 
 	Point p0, p;
 
@@ -155,9 +150,11 @@ exit:
 void RoutingInst::decomposeNet(Net& n)
 {
 	Segment s;
-	static std::unordered_map<Point, Point> adj;
-	static std::unordered_map<Point, int> dist;
-	static std::unordered_set<Point> q;
+
+	std::unordered_map<Point, Point> adj;
+	std::unordered_map<Point, int> dist;
+	std::unordered_set<Point> q;
+
 
 	adj.clear();
 	dist.clear();
@@ -218,8 +215,7 @@ void RoutingInst::routeNet(Net& n)
 
 void RoutingInst::placeNet(const Net& n)
 {
-	static std::unordered_set<int> placed;
-	placed.clear();
+	std::unordered_set<int> placed;
 
 	for (const auto s : n.nroute) {
 		for (const auto edge : s.edges) {
