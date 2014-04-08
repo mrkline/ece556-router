@@ -341,8 +341,8 @@ void RoutingInst::solveRouting()
 		routeNet(n);
 		placeNet(n);
 
-		++i;
-// 		if((i++ % 512) == 0)
+// 		++i;
+		if((i++ % 512) == 0)
 		{
 			int width = i / barDivisor;
 			std::cout << "\033[3A\033[1G" << std::flush;
