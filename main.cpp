@@ -3,10 +3,89 @@
 #include "ece556.hpp"
 #include "reader.hpp"
 
+
 // I prefer printf to cout. It's easier to format stuff and the stream operator for cout can be weird.
 #include <cstdio>
 #include <iostream>
+#include <getopt.h> 
+#include <cstring>
 
+
+struct Options {
+	std::string inputBenchmark, outputFile;
+
+	bool useNetDecomposition = false;
+	bool useNetOrdering = false;
+};
+
+
+
+static bool optArgToBool(const char *name)
+{
+	if(std::strcmp(optarg, "1") == 0 || std::strcmp(optarg, "=1") == 0) {
+		return true;
+	}
+	else if(std::strcmp(optarg, "0") == 0 || std::strcmp(optarg, "=0") == 0) {
+		return false;
+	}
+	else {
+		std::cerr << "Expected either \"1\" or \"0\" for option " << name << "\n";
+		std::exit(1);
+	}
+}
+
+// [[noreturn]]
+static void usage(int argc, char **argv)
+{
+	std::cerr << "Usage: " << (argc > 0? argv[0] : "route") << " [-d=0] [-n=0] INPUT_BENCHMARK OUTPUT\n";
+	std::exit(1);
+}
+
+static Options parseOpts(int argc, char **argv)
+{
+	int ch;
+	Options result;
+	opterr = 0;
+
+	option longopts[] = {
+		{"help", no_argument, nullptr, 'h'},
+		{"decomp", required_argument, nullptr, 'd'},
+		{"order", required_argument, nullptr, 'n'},
+		{nullptr, 0, nullptr, 0}
+	};
+
+	while((ch = getopt_long(argc, argv, "hd:n:", longopts, nullptr)) != -1) {
+		switch(ch) {
+			case 'd': {
+				result.useNetDecomposition = optArgToBool("-d");
+			} break;
+			case 'n': {
+				result.useNetOrdering = optArgToBool("-n");
+			} break;
+			case 'h': {
+				usage(argc, argv);
+			} break;
+			case ':': break;
+			default: {
+				std::cerr << "Unrecognized option: " << char(ch) << "\n";
+				usage(argc, argv);
+			} break;
+		}
+	}
+
+	int remainingArgCount = argc - optind;
+	char **remainingArgs = argv + optind;
+
+	if(remainingArgCount != 2) {
+		usage(argc, argv);
+	}
+	else {
+		result.inputBenchmark = remainingArgs[0];
+		result.outputFile = remainingArgs[1];
+	}
+
+	return result;
+}
 
 static void testReadingInput()
 {
@@ -42,26 +121,24 @@ int main(int argc, char** argv)
 // 	testReadingInput(); return 0;
 // 	testEdgeID(); return 0;
 
- 	if (argc!=3) {
- 		printf("Usage : route <input_benchmark_name> <output_file_name> \n");
- 		return 1;
- 	}
 
-	const char* inputFileName = argv[1];
- 	const char* outputFileName = argv[2];
+	auto opts = parseOpts(argc, argv);
+
+// 	std::cout << "options parsed: " << opts.inputBenchmark << ", " << opts.outputFile << ", " <<
+// 		opts.useNetOrdering << ", " << opts.useNetDecomposition << ".\n";
 
  	/// create a new routing instance
  	RoutingInst rst;
 
  	/// read benchmark
 	try {
-		readBenchmark(inputFileName, rst);
+		readBenchmark(opts.inputBenchmark.c_str(), rst);
 
 		/// run actual routing
 		rst.solveRouting();
 
 		/// write the result
-		rst.writeOutput(outputFileName);
+		rst.writeOutput(opts.outputFile.c_str());
 
 		printf("\nDONE!\n");
 		return 0;
