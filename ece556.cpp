@@ -390,12 +390,9 @@ void RoutingInst::solveRouting()
 	cout << "\n\n\n\n";
 	// find an initial solution
 	for (auto &n : nets) {
-		//if (n.id != 12660) continue;
-// 		cout << n.id << "\n";
 		routeNet(n);
 		placeNet(n);
 
-// 		++i;
 		if((i++ % 512) == 0)
 		{
 			int width = i / barDivisor;
@@ -417,44 +414,9 @@ void RoutingInst::solveRouting()
 				<< "Aggression level: " <<  aggression << ". Bisect max: " << startHi << ". TOF: " << tof << "\n";
 
 		}
-
-// 		if((i % 2048) == 0) {
-// 			ss.str("net_");
-// 			ss << n.id << ".svg";
-// 			toSvg(ss.str());
-// 		}
-// 		if (i > 20000) break;;
 	}
 
-	/*for (auto &n : nets) {
-		placeRoute(n);
-	}*/
 	violationSvg("violations.svg");
-
-	// find violators
-	/*for (const auto &n : rst.nets)
-		if (hasViolations(n.route, rst))
-			v_nets.emplace(n);
-
-	// reorder nets (TODO)
-
-	// reroute until all our problems are solved!
-	while (!v_nets.empty()) {
-		const auto &n = v_nets.top();
-		v_nets.pop();
-
-		if (!hasViolators(n, true, rst))
-			continue;
-
-		// rip up and reroute
-		ripRoute(n.nroute, rst);
-		findRoute(n.pin, &rnew, rst);
-		if (!hasViolators(rnew, false, rst))
-			n.nroute = rnew;
-		else
-			v_nets.emplace(n);
-		placeRoute(n.nroute, rst);
-	}*/
 }
 
 namespace {
