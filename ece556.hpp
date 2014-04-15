@@ -112,6 +112,21 @@ struct RoutingInst {
 private:
 	void decomposeNetSimple(Net &n);
 	void decomposeNetMST(Net &n);
+
+	struct EdgeInfo
+	{
+		int overflowCount; // k_e^k
+		int weight; // w_e^k
+		
+		EdgeInfo()
+		: overflowCount(0)
+		, weight(0)
+		{ }
+	};
+	std::vector<EdgeInfo> edgeInfos;
+
+	void updateEdgeWeights();
+	int edgeWeight(const Edge &e) const;
 public:
 	bool useNetDecomposition = true;
 	bool useNetOrdering = false;
@@ -129,6 +144,7 @@ public:
 	int numEdges; ///< number of edges of the grid
 	std::vector<int> edgeCaps; ///< array of the actual edge capacities after considering for blockage
 	std::vector<int> edgeUtils; ///< array of edge utilizations
+	
 
 	bool neighbor(Point &p, unsigned int caseNumber);
 
@@ -153,6 +169,11 @@ public:
 		return ::edgeID(gx, gy, p1.x, p1.y, p2.x, p2.y);
 	}
 
+	int edgeID(const Edge &e) const
+	{
+		return edgeID(e.p1, e.p2);
+	}
+	
 	Edge edge(int edgeID) const
 	{
 		return ::edge(gx, gy, edgeID);

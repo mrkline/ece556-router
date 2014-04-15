@@ -27,6 +27,37 @@ void readBenchmark(const char *fileName, RoutingInst& rst)
 	rst = readRoutingInst(in);
 }
 
+void RoutingInst::updateEdgeWeights()
+{
+	edgeInfos.resize(edgeCaps.size());
+
+	for(size_t i = 0; i < edgeInfos.size(); ++i) {
+		auto &ei = edgeInfos[i];
+		const int overflow = edgeUtils[i] - edgeCaps[i];
+
+		if(overflow > 0) {
+			ei.weight = overflow * ei.overflowCount;
+			ei.overflowCount++;
+		}
+		else {
+			ei.weight = 0;
+		}
+	}
+}
+
+int RoutingInst::edgeWeight(const Edge &e) const
+{
+	size_t index = edgeID(e);
+
+	if(index < edgeInfos.size()) {
+		return edgeInfos[index].weight;
+	}
+	else {
+		return 0; // initial value
+	}
+}
+
+
 bool RoutingInst::neighbor(Point &p, unsigned int caseNumber)
 {
 	switch(caseNumber)
