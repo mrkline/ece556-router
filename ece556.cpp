@@ -96,7 +96,7 @@ bool RoutingInst::_aStarRouteSeg(Segment& s, int aggressiveness)
 	open_score.emplace(s.p1);
 
 	// stop when end node is reach or when all nodes are explored
-	while (closed.count(s.p2) > 0 && !open.empty()) {
+	while (closed.count(s.p2) == 0 && !open.empty()) {
 		// move top canidate to 'closed' and evaluate neighbors
 		p0 = open_score.top();
 		open_score.pop();
