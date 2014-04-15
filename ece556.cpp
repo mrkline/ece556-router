@@ -457,10 +457,14 @@ void RoutingInst::solveRouting()
 	}*/
 }
 
-static std::string strerrno()
+namespace {
+
+string strerrno()
 {
 	return strerror(errno);
 }
+
+} // end anonymous namespace
 
 void RoutingInst::writeOutput(const char *outRouteFile)
 {
