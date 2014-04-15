@@ -396,7 +396,7 @@ void RoutingInst::solveRouting()
 		if((i++ % 512) == 0)
 		{
 			int width = i / barDivisor;
-			cout << "\033[3A\033[1G" << flush;
+			cout << "\033[3A\033[1G";
 			cout << "\033[0K" << setw(4) << i * 100 / nets.size() << " [";
 			for(int j = 0; j < width; ++j)
 			{
@@ -412,7 +412,7 @@ void RoutingInst::solveRouting()
 			cout << "\n\033[0KNets routed: " << i << "/" << nets.size();
 			cout << "\n\033[0KElapsed time: " << time(0) - startTime << " seconds. "
 				<< "Aggression level: " <<  aggression << ". Bisect max: " << startHi << ". TOF: " << tof << "\n";
-
+			cout << flush;
 		}
 	}
 
