@@ -109,6 +109,13 @@ struct Net {
 
 /// Represents a routing instance
 struct RoutingInst {
+private:
+	void decomposeNetSimple(Net &n);
+	void decomposeNetMST(Net &n);
+public:
+	bool useNetDecomposition = true;
+	bool useNetOrdering = false;
+
 	int gx; ///< x dimension of the global routing grid
 	int gy; ///< y dimension of the global routing grid
 

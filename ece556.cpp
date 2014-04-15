@@ -146,8 +146,7 @@ exit:
 	return;
 }
 
-// decompose pins into a MST based on L1 distance
-void RoutingInst::decomposeNet(Net& n)
+void RoutingInst::decomposeNetMST(Net &n)
 {
 	Segment s;
 
@@ -198,6 +197,28 @@ void RoutingInst::decomposeNet(Net& n)
 				dist[p] = t;
 			}
 		}
+	}
+	
+}
+
+void RoutingInst::decomposeNetSimple(Net &n)
+{
+	if(n.pins.empty()) return; // (assumed nonempty by loop condition)
+	
+	for(auto it = n.pins.begin(); it + 1 != n.pins.end(); ++it) {
+		n.nroute.emplace_back<Segment>({it[0], it[1], {}});
+	}
+}
+
+
+// decompose pins into a MST based on L1 distance
+void RoutingInst::decomposeNet(Net& n)
+{
+	if(useNetDecomposition) {
+		decomposeNetMST(n);
+	}
+	else {
+		decomposeNetSimple(n);
 	}
 }
 
