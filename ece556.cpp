@@ -18,11 +18,13 @@
 #include "writer.hpp"
 #include "util.hpp"
 
+using namespace std;
+
 void readBenchmark(const char *fileName, RoutingInst& rst)
 {
-	std::ifstream in(fileName);
+	ifstream in(fileName);
 	if(!in) {
-		throw std::runtime_error("I/O Error");
+		throw runtime_error("I/O Error");
 	}
 	rst = readRoutingInst(in);
 }
@@ -79,11 +81,11 @@ bool RoutingInst::neighbor(Point &p, unsigned int caseNumber)
 // Use A* search to route a segment with a maximum of aggressiveness violation on each edge
 bool RoutingInst::_aStarRouteSeg(Segment& s, int aggressiveness)
 {
-	std::unordered_set<Point> open, closed;
-	std::priority_queue<Point, std::vector<Point>, GoalComp>
+	unordered_set<Point> open, closed;
+	priority_queue<Point, vector<Point>, GoalComp>
 		open_score(GoalComp{s.p2});
-	std::unordered_map<Point, Point> prev;
-	std::vector<Point> neighbors;
+	unordered_map<Point, Point> prev;
+	vector<Point> neighbors;
 
 	Point p0, p;
 
@@ -181,9 +183,9 @@ void RoutingInst::decomposeNetMST(Net &n)
 {
 	Segment s;
 
-	std::unordered_map<Point, Point> adj;
-	std::unordered_map<Point, int> dist;
-	std::unordered_set<Point> q;
+	unordered_map<Point, Point> adj;
+	unordered_map<Point, int> dist;
+	unordered_set<Point> q;
 
 
 	adj.clear();
@@ -267,7 +269,7 @@ void RoutingInst::routeNet(Net& n)
 
 void RoutingInst::placeNet(const Net& n)
 {
-	std::unordered_set<int> placed;
+	unordered_set<int> placed;
 
 	for (const auto s : n.nroute) {
 		for (const auto edge : s.edges) {
@@ -283,7 +285,7 @@ void RoutingInst::placeNet(const Net& n)
 // rip up the route from an old net and return it
 Route RoutingInst::ripNet(Net& n)
 {
-	std::unordered_set<int> ripped;
+	unordered_set<int> ripped;
 	Route old;
 
 	for (const auto &s : n.nroute) {
@@ -320,7 +322,7 @@ bool RoutingInst::routeValid(Route& r, bool isplaced)
 
 void RoutingInst::violationSvg(const std::string& fileName)
 {
-	std::ofstream svg(fileName);
+	ofstream svg(fileName);
 	Edge e;
 
 	svg << "<svg xmlns=\"http://www.w3.org/2000/svg\"";
@@ -342,7 +344,7 @@ void RoutingInst::violationSvg(const std::string& fileName)
 
 void RoutingInst::toSvg(const std::string& fileName)
 {
-	std::ofstream svg(fileName);
+	ofstream svg(fileName);
 
 	svg << "<svg xmlns=\"http://www.w3.org/2000/svg\"";
 	svg << "	xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n";
@@ -367,7 +369,7 @@ void RoutingInst::toSvg(const std::string& fileName)
 void RoutingInst::reorderNets()
 {
 
-	std::sort(nets.begin(), nets.end(), [](const Net &n1, const Net &n2) {
+	sort(nets.begin(), nets.end(), [](const Net &n1, const Net &n2) {
 		return n2.pins.size() > n1.pins.size();
 // 		return n1.pinTourManhattan() > n2.pinTourManhattan();
 	});
@@ -376,20 +378,20 @@ void RoutingInst::reorderNets()
 void RoutingInst::solveRouting()
 {
 	aggression = 0;
-	std::stringstream ss;
+	stringstream ss;
 
 	reorderNets();
 	int i = 0;
 
 	int barWidth = 60;
 	int barDivisor = nets.size() / barWidth;
-	int startTime = std::time(0);
+	int startTime = time(0);
 
-	std::cout << "\n\n\n\n";
+	cout << "\n\n\n\n";
 	// find an initial solution
 	for (auto &n : nets) {
 		//if (n.id != 12660) continue;
-// 		std::cout << n.id << "\n";
+// 		cout << n.id << "\n";
 		routeNet(n);
 		placeNet(n);
 
@@ -397,21 +399,21 @@ void RoutingInst::solveRouting()
 		if((i++ % 512) == 0)
 		{
 			int width = i / barDivisor;
-			std::cout << "\033[3A\033[1G" << std::flush;
-			std::cout << "\033[0K" << std::setw(4) << i * 100 / nets.size() << " [";
+			cout << "\033[3A\033[1G" << flush;
+			cout << "\033[0K" << setw(4) << i * 100 / nets.size() << " [";
 			for(int j = 0; j < width; ++j)
 			{
-				std::cout << "*";
+				cout << "*";
 			}
 			for(int j = width; j < barWidth; ++j)
 			{
-				std::cout << "-";
+				cout << "-";
 			}
 
-			std::cout << "]";
+			cout << "]";
 
-			std::cout << "\n\033[0KNets routed: " << i << "/" << nets.size();
-			std::cout << "\n\033[0KElapsed time: " << std::time(0) - startTime << " seconds. "
+			cout << "\n\033[0KNets routed: " << i << "/" << nets.size();
+			cout << "\n\033[0KElapsed time: " << time(0) - startTime << " seconds. "
 				<< "Aggression level: " <<  aggression << ". Bisect max: " << startHi << ". TOF: " << tof << "\n";
 
 		}
@@ -457,20 +459,20 @@ void RoutingInst::solveRouting()
 
 static std::string strerrno()
 {
-	return std::strerror(errno);
+	return strerror(errno);
 }
 
 void RoutingInst::writeOutput(const char *outRouteFile)
 {
-	std::ofstream out(outRouteFile);
+	ofstream out(outRouteFile);
 	if(!out) {
-		throw std::runtime_error(std::string("opening ") + outRouteFile + ": " + strerrno());
+		throw runtime_error(string("opening ") + outRouteFile + ": " + strerrno());
 	}
 	write(out, *this);
 	out.close(); // close explicitly to allow for printing a warning message if it fails
 
 	if(!out) {
-		std::cerr << "warning: error closing file: " << strerrno() << "\n";
+		cerr << "warning: error closing file: " << strerrno() << "\n";
 	}
 }
 
