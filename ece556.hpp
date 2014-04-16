@@ -70,7 +70,7 @@ struct Segment {
 	{
 		p1 = o.p1;
 		p2 = o.p2;
-		edges = std::move(edges);
+		edges = std::move(o.edges);
 		return *this;
 	}
 };
