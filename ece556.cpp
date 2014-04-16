@@ -89,7 +89,7 @@ bool RoutingInst::_aStarRouteSeg(Segment& s, int aggressiveness)
 	priority_queue<Point, vector<Point>, decltype(goalComp)> open_score(goalComp);
 	unordered_map<Point, Point> prev;
 
-	Point p0, p;
+	Point p0;
 
 	assert(s.edges.empty());
 
@@ -133,7 +133,7 @@ bool RoutingInst::_aStarRouteSeg(Segment& s, int aggressiveness)
 	}
 
 	// Walk backwards to create route
-	for (p = s.p2; p != s.p1; p = prev[p]) {
+	for (Point p = s.p2; p != s.p1; p = prev[p]) {
 		s.edges.emplace_back(edgeID(p, prev[p]));
 	}
 
