@@ -85,7 +85,6 @@ bool RoutingInst::_aStarRouteSeg(Segment& s, int aggressiveness)
 	priority_queue<Point, vector<Point>, GoalComp>
 		open_score(GoalComp{s.p2});
 	unordered_map<Point, Point> prev;
-	vector<Point> neighbors;
 
 	Point p0, p;
 
