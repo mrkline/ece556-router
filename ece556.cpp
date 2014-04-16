@@ -108,7 +108,7 @@ bool RoutingInst::_aStarRouteSeg(Segment& s, int aggressiveness)
 			if(!neighbor(p, neighborCase)) continue;
 
 			// skip previously/currently examined
-			if (closed.count(p) || open.count(p)) {
+			if (closed.count(p) > 0 || open.count(p) > 0) {
 				continue;
 			}
 
@@ -272,7 +272,7 @@ void RoutingInst::placeNet(const Net& n)
 
 	for (const auto s : n.nroute) {
 		for (const auto edge : s.edges) {
-			if (placed.count(edge)) {
+			if (placed.count(edge) > 0) {
 				continue;
 			}
 			getElementResizingIfNecessary(edgeUtils, edge, 0)++;
@@ -289,7 +289,7 @@ Route RoutingInst::ripNet(Net& n)
 
 	for (const auto &s : n.nroute) {
 		for (const auto edge : s.edges) {
-			if (ripped.count(edge)) {
+			if (ripped.count(edge) > 0) {
 				continue;
 			}
 			getElementResizingIfNecessary(edgeUtils, edge, 0)--;
@@ -377,7 +377,6 @@ void RoutingInst::reorderNets()
 void RoutingInst::solveRouting()
 {
 	aggression = 0;
-	stringstream ss;
 
 	reorderNets();
 	int i = 0;
