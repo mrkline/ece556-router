@@ -39,16 +39,6 @@ namespace std {
 	};
 }
 
-
-struct GoalComp {
-	Point goal;
-
-	bool operator()(const Point& p1, const Point& p2) const
-	{
-		return goal.l1dist(p1) > goal.l1dist(p2);
-	}
-};
-
 /// A segment consisting of two points and edges
 /// This is not, strictly speaking, a line segment, but is actually a linear spline (a collection of
 /// connected line segments).
