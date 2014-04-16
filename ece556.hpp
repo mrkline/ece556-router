@@ -57,6 +57,32 @@ struct Segment {
 	Point p2 ; ///< end point of a segment
 
 	std::vector<int> edges; ///< Edges representing the segment
+
+	Segment() = default;
+
+	Segment(const Point& cp1, const Point& cp2) :
+		p1(cp1),
+		p2(cp2),
+		edges()
+	{ }
+
+	Segment(const Segment&) = default;
+
+	Segment(Segment&& o) :
+		p1(o.p1),
+		p2(o.p2),
+		edges(move(o.edges))
+	{ }
+
+	Segment& operator=(const Segment&) = default;
+
+	Segment& operator=(Segment&& o)
+	{
+		p1 = o.p1;
+		p2 = o.p2;
+		edges = std::move(edges);
+		return *this;
+	}
 };
 
 /// This is a real line segment. In this router, they are always 1 unit long.
