@@ -17,6 +17,7 @@
 #include "reader.hpp"
 #include "writer.hpp"
 #include "util.hpp"
+#include "PeriodicRunner.hpp"
 
 using namespace std;
 
@@ -379,40 +380,48 @@ void RoutingInst::solveRouting()
 	aggression = 0;
 
 	reorderNets();
-	int i = 0;
 
 	int barWidth = 60;
 	int barDivisor = nets.size() / barWidth;
 	int startTime = time(0);
 
 	cout << "\n\n\n\n";
+
+	/// Print every 200 milliseconds
+	PeriodicRunner<chrono::milliseconds> printer(chrono::milliseconds(200));
+
+	int netsRouted = 0;
+
+	auto printFunc = [&]
+	{
+		int width = netsRouted / barDivisor;
+		cout << "\033[3A\033[1G";
+		cout << "\033[0K" << setw(4) << netsRouted * 100 / nets.size() << " [";
+		for(int j = 0; j < width; ++j)
+		{
+			cout << "*";
+		}
+		for(int j = width; j < barWidth; ++j)
+		{
+			cout << "-";
+		}
+
+		cout << "]";
+
+		cout << "\n\033[0KNets routed: " << netsRouted << "/" << nets.size();
+		cout << "\n\033[0KElapsed time: " << time(0) - startTime << " seconds. "
+			<< "Aggression level: " <<  aggression << ". Bisect max: " << startHi << ". TOF: " << tof << "\n";
+		cout << flush;
+	};
+
 	// find an initial solution
 	for (auto &n : nets) {
 		routeNet(n);
 		placeNet(n);
-
-		if((i++ % 512) == 0)
-		{
-			int width = i / barDivisor;
-			cout << "\033[3A\033[1G";
-			cout << "\033[0K" << setw(4) << i * 100 / nets.size() << " [";
-			for(int j = 0; j < width; ++j)
-			{
-				cout << "*";
-			}
-			for(int j = width; j < barWidth; ++j)
-			{
-				cout << "-";
-			}
-
-			cout << "]";
-
-			cout << "\n\033[0KNets routed: " << i << "/" << nets.size();
-			cout << "\n\033[0KElapsed time: " << time(0) - startTime << " seconds. "
-				<< "Aggression level: " <<  aggression << ". Bisect max: " << startHi << ". TOF: " << tof << "\n";
-			cout << flush;
-		}
+		++netsRouted;
+		printer.runPeriodically(printFunc);
 	}
+	printer.runPeriodically(printFunc);
 
 	violationSvg("violations.svg");
 }
