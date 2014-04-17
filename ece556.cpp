@@ -381,7 +381,10 @@ void RoutingInst::solveRouting()
 {
 	aggression = 0;
 
-	reorderNets();
+	if (useNetOrdering)
+		reorderNets();
+	else
+		printf("Not using ordering\n");
 
 	int barWidth = 60;
 	int barDivisor = nets.size() / barWidth;

@@ -14,8 +14,8 @@
 struct Options {
 	std::string inputBenchmark, outputFile;
 
-	bool useNetDecomposition = false;
-	bool useNetOrdering = false;
+	bool useNetDecomposition = true;
+	bool useNetOrdering = true;
 };
 
 
@@ -133,6 +133,9 @@ int main(int argc, char** argv)
  	/// read benchmark
 	try {
 		readBenchmark(opts.inputBenchmark.c_str(), rst);
+
+		rst.useNetDecomposition = opts.useNetDecomposition;
+		rst.useNetOrdering = opts.useNetOrdering;
 
 		/// run actual routing
 		rst.solveRouting();

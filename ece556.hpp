@@ -144,7 +144,7 @@ private:
 	int edgeWeight(const Edge &e) const;
 public:
 	bool useNetDecomposition = true;
-	bool useNetOrdering = false;
+	bool useNetOrdering = true;
 
 	int gx; ///< x dimension of the global routing grid
 	int gy; ///< y dimension of the global routing grid
