@@ -112,10 +112,8 @@ struct Net {
 	{
 		int r = 0;
 
-		for(auto begin = pins.begin(), it = pins.begin(), end = pins.end(); it != end; ++it) {
-			if(it != begin) {
-				r += it[-1].l1dist(it[0]);
-			}
+		for(auto it = pins.begin() + 1, end = pins.end(); it != end; ++it) {
+			r += it[-1].l1dist(it[0]);
 		}
 
 		return r;
