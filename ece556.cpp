@@ -366,7 +366,9 @@ void RoutingInst::violationSvg(const std::string& fileName)
 	Edge e;
 
 	svg << "<svg xmlns=\"http://www.w3.org/2000/svg\"";
-	svg << "	xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n";
+	svg << "	xmlns:xlink=\"http://www.w3.org/1999/xlink\"\n";
+	svg << "\twidth=\"" << gx*3 << "\" height=\"" << gy*3 << "\"";
+	svg << ">\n";
 
 	int maxOverflow = 0;
 	for(size_t i = 0; i < edgeCaps.size(); ++i) {
