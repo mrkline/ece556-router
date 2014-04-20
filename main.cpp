@@ -138,7 +138,8 @@ int main(int argc, char** argv)
 		rst.useNetOrdering = opts.useNetOrdering;
 
 		/// run actual routing
-		rst.solveRouting();
+// 		rst.solveRouting();
+		rst.rrRoute();
 
 		/// write the result
 		rst.writeOutput(opts.outputFile.c_str());

@@ -140,6 +140,10 @@ private:
 
 	void updateEdgeWeights();
 	int edgeWeight(const Edge &e) const;
+	int edgeWeight(int id) const;
+	int totalEdgeWeight(const Net &n) const;
+	bool hasViolation(const Net &n) const;
+	
 public:
 	bool useNetDecomposition = true;
 	bool useNetOrdering = true;
@@ -161,9 +165,13 @@ public:
 
 	bool neighbor(Point &p, unsigned int caseNumber);
 
-	bool _aStarRouteSeg(Segment& s, int aggressiveness);
+	/// Use A* search to route a segment with a maximum of aggressiveness violation on each edge
+	/// \param aggressiveness the number of violations to permit
+	bool aStarRouteSeg(Segment& s, int aggressiveness);
 
+	/// Route segment, automatically increasing aggressiveness (violation tolerance) as necessary.
 	void aStarRouteSeg(Segment& s);
+	
 	void decomposeNet(Net& n);
 	void routeNet(Net& n);
 	void placeNet(const Net& n);
@@ -176,6 +184,7 @@ public:
 	void violationSvg(const std::string& fileName);
 	void toSvg(const std::string& fileName);
 
+	void rrRoute();
 
 	int edgeID(const Point &p1, const Point &p2) const
 	{

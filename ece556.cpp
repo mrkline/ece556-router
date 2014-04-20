@@ -18,6 +18,8 @@
 #include "writer.hpp"
 #include "util.hpp"
 #include "PeriodicRunner.hpp"
+#include "progress.hpp"
+
 
 using namespace std;
 
@@ -48,9 +50,10 @@ void RoutingInst::updateEdgeWeights()
 	}
 }
 
-int RoutingInst::edgeWeight(const Edge &e) const
+
+int RoutingInst::edgeWeight(int id) const
 {
-	size_t index = edgeID(e);
+	size_t index = id;
 
 	if(index < edgeInfos.size()) {
 		return edgeInfos[index].weight;
@@ -58,6 +61,25 @@ int RoutingInst::edgeWeight(const Edge &e) const
 	else {
 		return 0; // initial value
 	}
+	
+}
+
+int RoutingInst::edgeWeight(const Edge &e) const
+{
+	return edgeWeight(edgeID(e));
+}
+
+int RoutingInst::totalEdgeWeight(const Net &n) const
+{
+	int result = 0;
+
+	for(const auto &route : n.nroute) {
+		for(int edgeID : route.edges) {
+			result += edgeWeight(edgeID);
+		}
+	}
+
+	return result;
 }
 
 
@@ -79,12 +101,25 @@ bool RoutingInst::neighbor(Point &p, unsigned int caseNumber)
 }
 
 
-// Use A* search to route a segment with a maximum of aggressiveness violation on each edge
-bool RoutingInst::_aStarRouteSeg(Segment& s, int aggressiveness)
+
+bool RoutingInst::hasViolation(const Net &n) const
+{
+	for(const auto &route : n.nroute) {
+		for(int id : route.edges) {
+			if(edgeUtils[id] > edgeCaps[id]) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+bool RoutingInst::aStarRouteSeg(Segment& s, int aggressiveness)
 {
 	unordered_set<Point> open;
 	unordered_set<Point> closed;
-	auto goalComp = [=](const Point& p1, const Point& p2)
+	auto goalComp = [&](const Point& p1, const Point& p2)
 		{ return s.p2.l1dist(p1) > s.p2.l1dist(p2); };
 	priority_queue<Point, vector<Point>, decltype(goalComp)> open_score(goalComp);
 	unordered_map<Point, Point> prev;
@@ -121,6 +156,7 @@ bool RoutingInst::_aStarRouteSeg(Segment& s, int aggressiveness)
 			}
 
 			// queue valid neighbors for future examination
+			
 			open.emplace(p);
 			open_score.emplace(p);
 			prev[p] = p0;
@@ -152,7 +188,7 @@ void RoutingInst::aStarRouteSeg(Segment& s)
 	while(routed < 0) {
 		while(hi - lo > 1) {
 			s.edges.clear();
-			if(_aStarRouteSeg(s, v)) {
+			if(aStarRouteSeg(s, v)) {
 				soln = move(s);
 				hi = v;
 				routed = v;
@@ -315,12 +351,6 @@ int RoutingInst::countViolations()
 	return v;
 }
 
-bool RoutingInst::routeValid(Route& r, bool isplaced)
-{
-	(void)r;
-	(void)isplaced;
-	return false;
-}
 
 void RoutingInst::violationSvg(const std::string& fileName)
 {
@@ -428,9 +458,78 @@ void RoutingInst::solveRouting()
 	}
 	printer.runPeriodically(printFunc);
 
-	violationSvg("violations.svg");
+// 	violationSvg("violations.svg");
 }
 
+void RoutingInst::rrRoute()
+{
+	// get initial solution
+	cout << "[1/2] Creating initial solution...\n";
+	solveRouting();
+	
+	// rrr
+	
+	cout << "[2/2] Rip up and reroute...\n";
+	for(int iter = 0; iter < 5; ++iter) {
+		updateEdgeWeights();
+		
+		sort(nets.begin(), nets.end(), [&](const Net &n1, const Net &n2) {
+			return totalEdgeWeight(n1) > totalEdgeWeight(n2);
+		});
+		
+		ProgressBar pbar(cout);
+		pbar.max = nets.size();
+		PeriodicRunner<chrono::milliseconds> printer(chrono::milliseconds(200));
+		startHi = 10;
+		int netsConsidered = 0;
+		int netsRerouted = 0;
+		const time_t startTime = time(nullptr);
+		auto printFunc = [&]()
+		{
+			pbar.value = netsConsidered;
+	
+			pbar
+				.draw()
+				.writeln(setw(32), "Nets considered: ", netsConsidered, "/", nets.size())
+				.writeln(setw(32), "Nets rerouted: ", netsRerouted)
+				.writeln(setw(32), "Phase time elapsed: ", time(nullptr) - startTime, " seconds.")
+				.writeln(setw(32), "Overflow tolerance: ", aggression)
+				.writeln(setw(32), "Bisect max: ", startHi);
+		};
+
+// 		pbar.resetCursor();
+// 		std::cout << "Rerunning RRR...\n";
+		for(auto &n : nets) {
+			if(hasViolation(n)) {
+				if(netsRerouted % 512 == 0) {
+					aggression = 0;
+					startHi = (startHi + 10) / 2;
+				}
+
+				ripNet(n);
+				assert(n.nroute.empty());
+			
+				decomposeNet(n);
+				for (auto &s : n.nroute) {
+					aStarRouteSeg(s); //, 1024);
+// 					if(!r) {
+// 						std::cerr << "\n\n\n\n\n\n\n\nerror routing\n\n\n\n\n\n\n\n\n\n";
+// 						std::abort();
+// 					}
+				}
+				
+				placeNet(n);
+				
+				++netsRerouted;
+			}
+			++netsConsidered;
+			
+			printer.runPeriodically(printFunc);
+		}
+		printFunc();
+	}
+
+}
 namespace {
 
 string strerrno()
