@@ -119,9 +119,16 @@ bool RoutingInst::aStarRouteSeg(Segment& s, int aggressiveness)
 {
 	unordered_set<Point> open;
 	unordered_set<Point> closed;
-	auto goalComp = [&](const Point& p1, const Point& p2)
-		{ return s.p2.l1dist(p1) > s.p2.l1dist(p2); };
-	priority_queue<Point, vector<Point>, decltype(goalComp)> open_score(goalComp);
+	typedef std::pair<int, Point> CostPoint;
+	
+// 	auto goalComp = [&](const Point& p1, const Point& p2)
+// 		{ return s.p2.l1dist(p1) > s.p2.l1dist(p2); };
+	auto costComp = [&](const CostPoint &p1, const CostPoint &p2) {
+		return p1.first > p2.first;
+	};
+	
+// 	priority_queue<Point, vector<Point>, decltype(goalComp)> open_score(goalComp);
+	priority_queue<CostPoint, vector<CostPoint>, decltype(costComp)> open_score(costComp);
 	unordered_map<Point, Point> prev;
 
 	Point p0;
@@ -130,12 +137,12 @@ bool RoutingInst::aStarRouteSeg(Segment& s, int aggressiveness)
 
 	// only the start node is initially open
 	open.emplace(s.p1);
-	open_score.emplace(s.p1);
+	open_score.emplace(s.p2.l1dist(s.p1), s.p1);
 
 	// stop when end node is reach or when all nodes are explored
 	while (closed.count(s.p2) == 0 && !open.empty()) {
 		// move top canidate to 'closed' and evaluate neighbors
-		p0 = open_score.top();
+		p0 = open_score.top().second;
 		open_score.pop();
 		open.erase(p0);
 		closed.emplace(p0);
@@ -151,14 +158,14 @@ bool RoutingInst::aStarRouteSeg(Segment& s, int aggressiveness)
 			}
 
 			// skip blocked edges
-			if (edgeUtil(p, p0) >= edgeCap(p, p0) + aggressiveness) {
-				continue;
-			}
+// 			if (edgeUtil(p, p0) >= edgeCap(p, p0) + aggressiveness) {
+// 				continue;
+// 			}
 
 			// queue valid neighbors for future examination
 			
 			open.emplace(p);
-			open_score.emplace(p);
+			open_score.emplace(s.p2.l1dist(p) + 10*edgeUtil(p, p0) / (edgeCap(p, p0)+1), p);
 			prev[p] = p0;
 		}
 	}
@@ -470,7 +477,7 @@ void RoutingInst::rrRoute()
 	// rrr
 	
 	cout << "[2/2] Rip up and reroute...\n";
-	for(int iter = 0; iter < 5; ++iter) {
+	for(int iter = 0; iter < 15; ++iter) {
 		updateEdgeWeights();
 		
 		sort(nets.begin(), nets.end(), [&](const Net &n1, const Net &n2) {
