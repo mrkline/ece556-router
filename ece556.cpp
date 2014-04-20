@@ -532,7 +532,6 @@ void RoutingInst::rrRoute()
 	int deltaViolation = 0;
 	int lastViolation = 0;
 	
-	for(auto &n : nets) if(hasViolation(n)) lastViolation++;
 	
 	for(int iter = 0; iter < 15; ++iter) {
 		
@@ -541,9 +540,8 @@ void RoutingInst::rrRoute()
 		
 		int violations = 0;
 		for(auto &n : nets) if(hasViolation(n)) violations++;
-		deltaViolation = -lastViolation + violations;
 		if(iter == 0) lastViolation = violations;
-		
+		deltaViolation = -lastViolation + violations;
 		if(deltaViolation > 0) {
 			deltaPenalty = -deltaPenalty;
 		}
