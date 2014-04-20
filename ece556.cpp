@@ -19,7 +19,7 @@
 #include "util.hpp"
 #include "PeriodicRunner.hpp"
 #include "progress.hpp"
-
+#include "colormap.hpp"
 
 using namespace std;
 
@@ -367,15 +367,25 @@ void RoutingInst::violationSvg(const std::string& fileName)
 	svg << "<svg xmlns=\"http://www.w3.org/2000/svg\"";
 	svg << "	xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n";
 
-	svg << "\t<path d=\"";
+	int maxOverflow = 0;
+	for(size_t i = 0; i < edgeCaps.size(); ++i) {
+		maxOverflow = max(maxOverflow, getElementOrDefault(edgeUtils, i, 0) - edgeCaps[i]);
+	}
+	
 	for (unsigned int i = 0; i < edgeUtils.size(); i++) {
 		e = edge(i);
-		if (edgeUtil(e.p1, e.p2) > edgeCap(e.p1, e.p2)) {
-			svg << " M" << e.p1.x << "," << e.p1.y;
-			svg << " L" << e.p2.x << "," << e.p2.y;
+		int overflow = edgeUtil(e.p1, e.p2) - edgeCap(e.p1, e.p2);
+		if (overflow > 0) {
+			svg << "\t<path stroke-width=\"3\" d=\"";
+			svg << " M" << e.p1.x*3 << "," << e.p1.y*3;
+			svg << " L" << e.p2.x*3 << "," << e.p2.y*3;
+			svg << "\" style=\"stroke:" 
+			    << getElementOrDefault(matplotlibHotColormap, overflow * 255 / maxOverflow, RGB{255,255,255})
+			    << "; fill:none;\"/>\n";
 		}
+	
 	}
-	svg << "\" style=\"stroke:#FF0000; fill:none;\"/>\n";
+
 	svg << "</svg>";
 	svg.close();
 
@@ -465,9 +475,47 @@ void RoutingInst::solveRouting()
 	}
 	printer.runPeriodically(printFunc);
 
+	logViolationSvg();
 // 	violationSvg("violations.svg");
 }
 
+void RoutingInst::logViolationSvg()
+{
+	auto t = std::time(nullptr);
+	auto tm = *std::localtime(&t);
+	
+	auto filename = (std::stringstream() << "violations_"
+		<< std::put_time(&tm, "%Y%m%dT%H%M%S%z") << ".svg").str();
+	
+	violationSvg(filename);
+	
+	*htmlLog << "<div class=\"background\"><img src=\"" << filename << "\"></div>\n" << std::flush;
+	std::cout << "violations logged to [" << filename << "]\n";
+}
+RoutingInst::RoutingInst()
+: htmlLog(new std::ofstream("log.html"))
+{
+	*htmlLog << 
+		"<!doctype html><html><head>\n"
+		"<style type=\"text/css\">\n"
+		".background { background-color: #000; }\n"
+		"</style>\n"
+		"<script src=\"http://code.jquery.com/jquery-1.11.0.min.js\"></script>"
+		"<title>Log</title>\n";
+	*htmlLog << "<script>\n";
+	std::ifstream js("log.js");
+	std::string line;
+	while(getline(js, line)) {
+		*htmlLog << line << "\n";
+	}
+	*htmlLog << "</script></head></body>\n";
+}
+
+RoutingInst::~RoutingInst()
+{
+	if(htmlLog.unique())
+		*htmlLog << "</body></html>";
+}
 void RoutingInst::rrRoute()
 {
 	// get initial solution
@@ -534,6 +582,7 @@ void RoutingInst::rrRoute()
 			printer.runPeriodically(printFunc);
 		}
 		printFunc();
+		logViolationSvg();
 	}
 
 }

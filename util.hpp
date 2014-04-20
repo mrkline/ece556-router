@@ -3,6 +3,8 @@
 
 #include <vector>
 #include <ostream>
+#include <utility>     // declval
+#include <type_traits> // remove_reference
 
 template <class T>
 T &getElementResizingIfNecessary(std::vector<T> &vec, size_t index, const T &default_)
@@ -18,9 +20,9 @@ T &getElementResizingIfNecessary(std::vector<T> &vec, size_t index, const T &def
 	return vec[index];
 }
 
-
-template <class T>
-T getElementOrDefault(const std::vector<T> &vec, size_t index, const T &default_)
+template <class Collection, 
+          class T=typename Collection::value_type>
+T getElementOrDefault(const Collection &vec, size_t index, const T &default_)
 {
 	size_t vecSize = vec.size();
 	if(index >= vecSize) {

@@ -2,6 +2,7 @@
 
 #include "ece556.hpp"
 #include "reader.hpp"
+#include "colormap.hpp"
 
 
 // I prefer printf to cout. It's easier to format stuff and the stream operator for cout can be weird.

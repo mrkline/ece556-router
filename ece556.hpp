@@ -7,6 +7,8 @@
 #include <iosfwd>
 #include "edgeid.hpp"
 #include "util.hpp"
+#include <fstream>
+#include <memory>
 
 /// Represents a 2D Point
 struct Point {
@@ -137,14 +139,18 @@ private:
 		{ }
 	};
 	std::vector<EdgeInfo> edgeInfos;
+	std::shared_ptr<std::ofstream> htmlLog;
 
 	void updateEdgeWeights();
 	int edgeWeight(const Edge &e) const;
 	int edgeWeight(int id) const;
 	int totalEdgeWeight(const Net &n) const;
 	bool hasViolation(const Net &n) const;
-	
+
 public:
+	RoutingInst();
+	~RoutingInst();
+
 	bool useNetDecomposition = true;
 	bool useNetOrdering = true;
 
@@ -183,7 +189,7 @@ public:
 	void writeOutput(const char *outRouteFile);
 	void violationSvg(const std::string& fileName);
 	void toSvg(const std::string& fileName);
-
+	void logViolationSvg();
 	void rrRoute();
 
 	int edgeID(const Point &p1, const Point &p2) const
