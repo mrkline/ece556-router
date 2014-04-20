@@ -152,6 +152,8 @@ public:
 	RoutingInst();
 	~RoutingInst();
 
+	std::chrono::seconds timeLimit = std::chrono::seconds::max();
+	
 	bool useNetDecomposition = true;
 	bool useNetOrdering = true;
 

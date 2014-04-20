@@ -137,6 +137,7 @@ int main(int argc, char** argv)
 
 		rst.useNetDecomposition = opts.useNetDecomposition;
 		rst.useNetOrdering = opts.useNetOrdering;
+		rst.timeLimit = std::chrono::minutes(15);
 
 		/// run actual routing
 // 		rst.solveRouting();

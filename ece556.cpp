@@ -452,6 +452,10 @@ RoutingInst::~RoutingInst()
 }
 void RoutingInst::rrRoute()
 {
+	using std::chrono::system_clock;
+	
+	const auto procedureStartTime = system_clock::now();
+	
 	// get initial solution
 	cout << "[1/2] Creating initial solution...\n";
 	solveRouting();
@@ -467,14 +471,22 @@ void RoutingInst::rrRoute()
 	const time_t startTime = time(nullptr);
 	
 	for(int iter = 0; iter < 15; ++iter) {
+		if(system_clock::now() >= procedureStartTime + timeLimit) {
+			cout << "Terminating due to expiration of time limit. Total time taken: " 
+				<< chrono::duration_cast<chrono::seconds>(system_clock::now() - procedureStartTime).count()
+				<< " seconds.\n";
+			break;
+		}
 		cout << "--> Iteration " << iter << "\n";
-		
+
 		updateEdgeWeights();
-		
+
 		int violations = 0;
 		for(auto &n : nets) if(hasViolation(n)) violations++;
 		if(iter == 0) lastViolation = violations;
 		deltaViolation = -lastViolation + violations;
+
+
 		if(deltaViolation > 0) {
 			deltaPenalty = -deltaPenalty;
 		}
@@ -483,12 +495,10 @@ void RoutingInst::rrRoute()
 
 		lastViolation = violations;
 
-		
-		
 		sort(nets.begin(), nets.end(), [&](const Net &n1, const Net &n2) {
 			return totalEdgeWeight(n1) > totalEdgeWeight(n2);
 		});
-		
+
 		ProgressBar pbar(cout);
 		pbar.max = nets.size();
 		PeriodicRunner<chrono::milliseconds> printer(chrono::milliseconds(200));
@@ -498,39 +508,43 @@ void RoutingInst::rrRoute()
 		auto printFunc = [&]()
 		{
 			pbar.value = netsConsidered;
-	
+			
+			auto elap = system_clock::now() - procedureStartTime;
+			int minutes = chrono::duration_cast<chrono::minutes>(elap).count();
+			int seconds = int(chrono::duration_cast<chrono::seconds>(elap).count()) % 60;
 			pbar
 				.draw()
 				.writeln(setw(32), "Nets considered: ", netsConsidered, "/", nets.size())
 				.writeln(setw(32), "Nets rerouted: ", netsRerouted)
-				.writeln(setw(32), "Phase time elapsed: ", time(nullptr) - startTime, " seconds.")
+				.writeln(setw(32), "Phase time elapsed: ", time(nullptr) - startTime, " seconds")
+				.writeln(setw(32), "Total time elapsed: ", 
+				         minutes, ":", setw(2), setfill('0'), seconds, setfill(' '))
 				.writeln(setw(32), "Overflow penalty: ", penalty)
 				.writeln(setw(32), "Violations: ", lastViolation, " (delta ", deltaViolation, ")");
 		};
 
-		
+
 		for(auto &n : nets) {
 			if(hasViolation(n)) {
 				ripNet(n);
 				assert(n.nroute.empty());
-			
+
 				decomposeNet(n);
 				for (auto &s : n.nroute) {
 					aStarRouteSeg(s);
 				}
-				
+
 				placeNet(n);
-				
+
 				++netsRerouted;
 			}
 			++netsConsidered;
-			
+
 			printer.runPeriodically(printFunc);
 		}
 		printFunc();
 		logViolationSvg();
 	}
-
 }
 namespace {
 
