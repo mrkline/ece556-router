@@ -17,6 +17,7 @@ struct Options {
 
 	bool useNetDecomposition = true;
 	bool useNetOrdering = true;
+	bool emitSVG = false;
 };
 
 
@@ -52,10 +53,11 @@ static Options parseOpts(int argc, char **argv)
 		{"help", no_argument, nullptr, 'h'},
 		{"decomp", required_argument, nullptr, 'd'},
 		{"order", required_argument, nullptr, 'n'},
+		{"emit-svg", no_argument, nullptr, 's'},
 		{nullptr, 0, nullptr, 0}
 	};
 
-	while((ch = getopt_long(argc, argv, "hd:n:", longopts, nullptr)) != -1) {
+	while((ch = getopt_long(argc, argv, "hd:n:s", longopts, nullptr)) != -1) {
 		switch(ch) {
 			case 'd': {
 				result.useNetDecomposition = optArgToBool("-d");
@@ -65,6 +67,9 @@ static Options parseOpts(int argc, char **argv)
 			} break;
 			case 'h': {
 				usage(argc, argv);
+			} break;
+			case 's': {
+				result.emitSVG = true;
 			} break;
 			case ':': break;
 			default: {
@@ -137,7 +142,8 @@ int main(int argc, char** argv)
 
 		rst.useNetDecomposition = opts.useNetDecomposition;
 		rst.useNetOrdering = opts.useNetOrdering;
-		rst.timeLimit = std::chrono::minutes(15);
+		rst.timeLimit = std::chrono::minutes(1);
+		rst.emitSVG = opts.emitSVG;
 
 		/// run actual routing
 // 		rst.solveRouting();

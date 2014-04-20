@@ -411,6 +411,24 @@ void RoutingInst::solveRouting()
 
 void RoutingInst::logViolationSvg()
 {
+	if(!emitSVG) return;
+	if(!htmlLog) {
+		htmlLog.reset(new std::ofstream("log.html"));
+		*htmlLog << 
+			"<!doctype html><html><head>\n"
+			"<style type=\"text/css\">\n"
+			".background { background-color: #000; }\n"
+			"</style>\n"
+			"<script src=\"http://code.jquery.com/jquery-1.11.0.min.js\"></script>"
+			"<title>Log</title>\n";
+		*htmlLog << "<script>\n";
+		std::ifstream js("log.js");
+		std::string line;
+		while(getline(js, line)) {
+			*htmlLog << line << "\n";
+		}
+		*htmlLog << "</script></head></body>\n";
+	}
 	auto t = std::time(nullptr);
 	auto tm = *std::localtime(&t);
 	
@@ -427,27 +445,13 @@ void RoutingInst::logViolationSvg()
 	std::cout << "violations logged to [" << filename << "]\n";
 }
 RoutingInst::RoutingInst()
-: htmlLog(new std::ofstream("log.html"))
 {
-	*htmlLog << 
-		"<!doctype html><html><head>\n"
-		"<style type=\"text/css\">\n"
-		".background { background-color: #000; }\n"
-		"</style>\n"
-		"<script src=\"http://code.jquery.com/jquery-1.11.0.min.js\"></script>"
-		"<title>Log</title>\n";
-	*htmlLog << "<script>\n";
-	std::ifstream js("log.js");
-	std::string line;
-	while(getline(js, line)) {
-		*htmlLog << line << "\n";
-	}
-	*htmlLog << "</script></head></body>\n";
+
 }
 
 RoutingInst::~RoutingInst()
 {
-	if(htmlLog.unique())
+	if(htmlLog && htmlLog.unique() && emitSVG)
 		*htmlLog << "</body></html>";
 }
 void RoutingInst::rrRoute()
@@ -470,7 +474,7 @@ void RoutingInst::rrRoute()
 	int lastViolation = 0;
 	const time_t startTime = time(nullptr);
 	
-	for(int iter = 0; iter < 15; ++iter) {
+	for(int iter = 0; true /* no iteration limit */; ++iter) {
 		if(system_clock::now() >= procedureStartTime + timeLimit) {
 			cout << "Terminating due to expiration of time limit. Total time taken: " 
 				<< chrono::duration_cast<chrono::seconds>(system_clock::now() - procedureStartTime).count()
@@ -495,9 +499,11 @@ void RoutingInst::rrRoute()
 
 		lastViolation = violations;
 
-		sort(nets.begin(), nets.end(), [&](const Net &n1, const Net &n2) {
-			return totalEdgeWeight(n1) > totalEdgeWeight(n2);
-		});
+		if(useNetOrdering) {
+			sort(nets.begin(), nets.end(), [&](const Net &n1, const Net &n2) {
+				return totalEdgeWeight(n1) > totalEdgeWeight(n2);
+			});
+		}
 
 		ProgressBar pbar(cout);
 		pbar.max = nets.size();

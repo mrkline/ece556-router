@@ -148,14 +148,16 @@ private:
 	bool hasViolation(const Net &n) const;
 
 	int penalty = 15;
+
 public:
 	RoutingInst();
 	~RoutingInst();
-
+	bool emitSVG = false;
 	std::chrono::seconds timeLimit = std::chrono::seconds::max();
 	
 	bool useNetDecomposition = true;
 	bool useNetOrdering = true;
+
 
 	int gx; ///< x dimension of the global routing grid
 	int gy; ///< y dimension of the global routing grid
