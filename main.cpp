@@ -142,7 +142,7 @@ int main(int argc, char** argv)
 
 		rst.useNetDecomposition = opts.useNetDecomposition;
 		rst.useNetOrdering = opts.useNetOrdering;
-		rst.timeLimit = std::chrono::minutes(1);
+		rst.timeLimit = std::chrono::minutes(15);
 		rst.emitSVG = opts.emitSVG;
 
 		/// run actual routing
