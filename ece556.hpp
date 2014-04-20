@@ -159,9 +159,6 @@ public:
 	int gy; ///< y dimension of the global routing grid
 
 	int cap;
-	int aggression;
-	int startHi = 10;
-	int tof = 0;
 
 	std::vector<Net> nets;
 
@@ -172,11 +169,8 @@ public:
 
 	bool neighbor(Point &p, unsigned int caseNumber);
 
-	/// Use A* search to route a segment with a maximum of aggressiveness violation on each edge
-	/// \param aggressiveness the number of violations to permit
-	bool aStarRouteSeg(Segment& s, int aggressiveness);
-
-	/// Route segment, automatically increasing aggressiveness (violation tolerance) as necessary.
+	/// Use A* search to route a segment with the overflow 
+	/// penalty from the member variable `penalty`.
 	void aStarRouteSeg(Segment& s);
 	
 	void decomposeNet(Net& n);

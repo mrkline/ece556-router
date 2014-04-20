@@ -115,19 +115,16 @@ bool RoutingInst::hasViolation(const Net &n) const
 	return false;
 }
 
-bool RoutingInst::aStarRouteSeg(Segment& s, int aggressiveness)
+void RoutingInst::aStarRouteSeg(Segment& s)
 {
 	unordered_set<Point> open;
 	unordered_set<Point> closed;
 	typedef std::pair<int, Point> CostPoint;
 	
-// 	auto goalComp = [&](const Point& p1, const Point& p2)
-// 		{ return s.p2.l1dist(p1) > s.p2.l1dist(p2); };
 	auto costComp = [&](const CostPoint &p1, const CostPoint &p2) {
 		return p1.first > p2.first;
 	};
 	
-// 	priority_queue<Point, vector<Point>, decltype(goalComp)> open_score(goalComp);
 	priority_queue<CostPoint, vector<CostPoint>, decltype(costComp)> open_score(costComp);
 	unordered_map<Point, Point> prev;
 
@@ -157,22 +154,11 @@ bool RoutingInst::aStarRouteSeg(Segment& s, int aggressiveness)
 				continue;
 			}
 
-			// skip blocked edges
-// 			if (edgeUtil(p, p0) >= edgeCap(p, p0) + aggressiveness) {
-// 				continue;
-// 			}
-
 			// queue valid neighbors for future examination
-			
 			open.emplace(p);
 			open_score.emplace(s.p2.l1dist(p) + penalty*edgeUtil(p, p0) / (edgeCap(p, p0)+1), p);
 			prev[p] = p0;
 		}
-	}
-
-	// couldn't route without violation... BAIL!!
-	if (!closed.count(s.p2)) {
-		return false;
 	}
 
 	// Walk backwards to create route
@@ -180,49 +166,6 @@ bool RoutingInst::aStarRouteSeg(Segment& s, int aggressiveness)
 		s.edges.emplace_back(edgeID(p, prev[p]));
 	}
 	
-
-	return true;
-}
-
-void RoutingInst::aStarRouteSeg(Segment& s)
-{
-	int lo=0, hi=startHi;
-	int v=aggression;
-	int routed = -1;
-	int maxSuccessfulBisections = 1;
-	int successfulBisections = 0;
-
-	Segment soln;
-	while(routed < 0) {
-		while(hi - lo > 1) {
-			s.edges.clear();
-			if(aStarRouteSeg(s, v)) {
-				soln = move(s);
-				hi = v;
-				routed = v;
-				successfulBisections++;
-			}
-			else {
-				lo = v;
-			}
-			v = (lo + hi) / 2;
-
-			if(successfulBisections >= maxSuccessfulBisections) {
-				v = hi;
-				goto exit;
-			}
-		}
-
-		hi += 10;
-		if(hi > startHi) {
-			startHi = hi;
-		}
-	}
-exit:
-	s = move(soln);
-
-	aggression = (aggression + routed) / 2;
-	return;
 }
 
 void RoutingInst::decomposeNetMST(Net &n)
@@ -429,44 +372,29 @@ void RoutingInst::reorderNets()
 
 void RoutingInst::solveRouting()
 {
-	aggression = 0;
-
 	if (useNetOrdering)
 		reorderNets();
 	else
 		printf("Not using ordering\n");
 
-	int barWidth = 60;
-	int barDivisor = nets.size() / barWidth;
 	int startTime = time(0);
-
-	cout << "\n\n\n\n";
 
 	/// Print every 200 milliseconds
 	PeriodicRunner<chrono::milliseconds> printer(chrono::milliseconds(200));
+	ProgressBar pbar(cout);
+	pbar.max = nets.size();
 
 	int netsRouted = 0;
 
-	auto printFunc = [&]
+	
+	auto printFunc = [&]()
 	{
-		int width = netsRouted / barDivisor;
-		cout << "\033[3A\033[1G";
-		cout << "\033[0K" << setw(4) << netsRouted * 100 / nets.size() << " [";
-		for(int j = 0; j < width; ++j)
-		{
-			cout << "*";
-		}
-		for(int j = width; j < barWidth; ++j)
-		{
-			cout << "-";
-		}
-
-		cout << "]";
-
-		cout << "\n\033[0KNets routed: " << netsRouted << "/" << nets.size();
-		cout << "\n\033[0KElapsed time: " << time(0) - startTime << " seconds. "
-			<< "Aggression level: " <<  aggression << ". Bisect max: " << startHi << ". TOF: " << tof << "\n";
-		cout << flush;
+		pbar.value = netsRouted;
+		pbar
+			.draw()
+			.writeln(setw(32), "Nets routed: ", netsRouted, "/", nets.size())
+			.writeln(setw(32), "Elapsed time: ", time(0) - startTime, " seconds")
+			.writeln(setw(32), "Overflow penalty: ", penalty);
 	};
 
 	// find an initial solution
@@ -476,10 +404,9 @@ void RoutingInst::solveRouting()
 		++netsRouted;
 		printer.runPeriodically(printFunc);
 	}
-	printer.runPeriodically(printFunc);
+	printFunc();
 
 	logViolationSvg();
-// 	violationSvg("violations.svg");
 }
 
 void RoutingInst::logViolationSvg()
@@ -530,17 +457,17 @@ void RoutingInst::rrRoute()
 	solveRouting();
 	
 	// rrr
-	
+	if(!useNetOrdering && !useNetDecomposition) return;
 	cout << "[2/2] Rip up and reroute...\n";
 	
 	
 	int deltaPenalty = -1;
 	int deltaViolation = 0;
 	int lastViolation = 0;
-	
+	const time_t startTime = time(nullptr);
 	
 	for(int iter = 0; iter < 15; ++iter) {
-		
+		cout << "--> Iteration " << iter << "\n";
 		
 		updateEdgeWeights();
 		
@@ -565,10 +492,9 @@ void RoutingInst::rrRoute()
 		ProgressBar pbar(cout);
 		pbar.max = nets.size();
 		PeriodicRunner<chrono::milliseconds> printer(chrono::milliseconds(200));
-		startHi = 10;
 		int netsConsidered = 0;
 		int netsRerouted = 0;
-		const time_t startTime = time(nullptr);
+
 		auto printFunc = [&]()
 		{
 			pbar.value = netsConsidered;
@@ -582,25 +508,15 @@ void RoutingInst::rrRoute()
 				.writeln(setw(32), "Violations: ", lastViolation, " (delta ", deltaViolation, ")");
 		};
 
-// 		pbar.resetCursor();
-// 		std::cout << "Rerunning RRR...\n";
+		
 		for(auto &n : nets) {
 			if(hasViolation(n)) {
-				if(netsRerouted % 512 == 0) {
-					aggression = 0;
-					startHi = (startHi + 10) / 2;
-				}
-
 				ripNet(n);
 				assert(n.nroute.empty());
 			
 				decomposeNet(n);
 				for (auto &s : n.nroute) {
-					aStarRouteSeg(s); //, 1024);
-// 					if(!r) {
-// 						std::cerr << "\n\n\n\n\n\n\n\nerror routing\n\n\n\n\n\n\n\n\n\n";
-// 						std::abort();
-// 					}
+					aStarRouteSeg(s);
 				}
 				
 				placeNet(n);
@@ -611,8 +527,6 @@ void RoutingInst::rrRoute()
 			
 			printer.runPeriodically(printFunc);
 		}
-// 		deltaViolation = netsRerouted - lastViolation;
-// 		lastViolation = netsRerouted;
 		printFunc();
 		logViolationSvg();
 	}
