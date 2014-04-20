@@ -9,6 +9,7 @@
 #include "util.hpp"
 #include <fstream>
 #include <memory>
+#include <chrono>
 
 /// Represents a 2D Point
 struct Point {
