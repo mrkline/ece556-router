@@ -485,8 +485,12 @@ void RoutingInst::logViolationSvg()
 	auto t = std::time(nullptr);
 	auto tm = *std::localtime(&t);
 	
-	auto filename = (std::stringstream() << "violations_"
-		<< std::put_time(&tm, "%Y%m%dT%H%M%S%z") << ".svg").str();
+    array<char, 256> timeString;
+
+    strftime(timeString.data(), timeString.size(), "%Y%m%dT%H%M%S%z", &tm);
+    std::stringstream ss;
+    ss << "violations_" << timeString.data() << ".svg";
+    auto filename = ss.str();
 	
 	violationSvg(filename);
 	
