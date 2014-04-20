@@ -165,7 +165,7 @@ bool RoutingInst::aStarRouteSeg(Segment& s, int aggressiveness)
 			// queue valid neighbors for future examination
 			
 			open.emplace(p);
-			open_score.emplace(s.p2.l1dist(p) + 10*edgeUtil(p, p0) / (edgeCap(p, p0)+1), p);
+			open_score.emplace(s.p2.l1dist(p) + penalty*edgeUtil(p, p0) / (edgeCap(p, p0)+1), p);
 			prev[p] = p0;
 		}
 	}
@@ -179,6 +179,7 @@ bool RoutingInst::aStarRouteSeg(Segment& s, int aggressiveness)
 	for (Point p = s.p2; p != s.p1; p = prev[p]) {
 		s.edges.emplace_back(edgeID(p, prev[p]));
 	}
+	
 
 	return true;
 }
@@ -525,8 +526,33 @@ void RoutingInst::rrRoute()
 	// rrr
 	
 	cout << "[2/2] Rip up and reroute...\n";
+	
+	
+	int deltaPenalty = -1;
+	int deltaViolation = 0;
+	int lastViolation = 0;
+	
+	for(auto &n : nets) if(hasViolation(n)) lastViolation++;
+	
 	for(int iter = 0; iter < 15; ++iter) {
+		
+		
 		updateEdgeWeights();
+		
+		int violations = 0;
+		for(auto &n : nets) if(hasViolation(n)) violations++;
+		deltaViolation = -lastViolation + violations;
+		if(iter == 0) lastViolation = violations;
+		
+		if(deltaViolation > 0) {
+			deltaPenalty = -deltaPenalty;
+		}
+		penalty += deltaPenalty;
+		
+
+		lastViolation = violations;
+
+		
 		
 		sort(nets.begin(), nets.end(), [&](const Net &n1, const Net &n2) {
 			return totalEdgeWeight(n1) > totalEdgeWeight(n2);
@@ -548,8 +574,8 @@ void RoutingInst::rrRoute()
 				.writeln(setw(32), "Nets considered: ", netsConsidered, "/", nets.size())
 				.writeln(setw(32), "Nets rerouted: ", netsRerouted)
 				.writeln(setw(32), "Phase time elapsed: ", time(nullptr) - startTime, " seconds.")
-				.writeln(setw(32), "Overflow tolerance: ", aggression)
-				.writeln(setw(32), "Bisect max: ", startHi);
+				.writeln(setw(32), "Overflow penalty: ", penalty)
+				.writeln(setw(32), "Violations: ", lastViolation, " (delta ", deltaViolation, ")");
 		};
 
 // 		pbar.resetCursor();
@@ -581,6 +607,8 @@ void RoutingInst::rrRoute()
 			
 			printer.runPeriodically(printFunc);
 		}
+// 		deltaViolation = netsRerouted - lastViolation;
+// 		lastViolation = netsRerouted;
 		printFunc();
 		logViolationSvg();
 	}

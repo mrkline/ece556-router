@@ -147,6 +147,7 @@ private:
 	int totalEdgeWeight(const Net &n) const;
 	bool hasViolation(const Net &n) const;
 
+	int penalty = 15;
 public:
 	RoutingInst();
 	~RoutingInst();

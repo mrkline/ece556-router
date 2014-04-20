@@ -5,7 +5,8 @@ LIBFLAGS :=
 
 OBJS := $(patsubst %.cpp,%.o, $(wildcard *.cpp))
 
-OPTIMIZATIONS := -O2 -DNDEBUG -flto
+#OPTIMIZATIONS := -O2 -DNDEBUG -flto
+OPTIMIZATIONS := -O2 -flto
 
 debug: CXXFLAGS += -g
 debug: route
