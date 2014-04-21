@@ -1,4 +1,3 @@
-
                                  The Halting Problem
                                    Project Part 2
                                        ECE 556
@@ -6,9 +5,7 @@
 
                             Team Member Responsibilities
 
-
-TODO
-
+Sam Roth: Changed A* search heuristic to take overflow into account, rather than failing and retrying with a greater overflow tolerance if no way around a blockage could be found.
 
                                      adaptec1.gr
 +--------------------+--------------------+--------------------+--------------------+
