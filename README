@@ -9,6 +9,8 @@ Sam Roth: Changed A* search heuristic to take overflow into account, rather than
 
 Robert Buchanan: MST net decomposition (though this was present in the last part). Some minor involement with A* search implementation.
 
+Matt Kline: Optimization and refactoring
+
                                      adaptec1.gr
 +--------------------+--------------------+--------------------+--------------------+
 |     -d=0 -n=0      |     -d=0 -n=1      |     -d=1 -n=0      |     -d=1 -n=1      |  
