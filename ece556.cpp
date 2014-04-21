@@ -11,6 +11,7 @@
 #include <sstream>
 #include <unordered_map>
 #include <unordered_set>
+#include <csignal>
 
 
 #include "ece556.hpp"
@@ -454,9 +455,39 @@ RoutingInst::~RoutingInst()
 	if(htmlLog && htmlLog.unique() && emitSVG)
 		*htmlLog << "</body></html>";
 }
+
+
+namespace
+{
+	volatile std::sig_atomic_t signalHandlerCalls = 0;
+	
+	void handler(int n)
+	{
+		signalHandlerCalls++;
+		std::signal(n, SIG_DFL);
+	}
+	
+	struct SetHandler
+	{
+		int signalNumber;
+		
+		SetHandler(int signalNumber)
+		: signalNumber(signalNumber)
+		{
+			std::signal(signalNumber, &handler);
+		}
+		
+		~SetHandler()
+		{
+			std::signal(signalNumber, SIG_DFL);
+		}
+	};
+}
+
 void RoutingInst::rrRoute()
 {
 	using std::chrono::system_clock;
+
 	
 	const auto procedureStartTime = system_clock::now();
 	
@@ -481,6 +512,11 @@ void RoutingInst::rrRoute()
 				<< " seconds.\n";
 			break;
 		}
+		
+		if(signalHandlerCalls > 0) {
+			cout << "Terminating due to interrupt.\n";
+			break;
+		}
 		cout << "--> Iteration " << iter << "\n";
 
 		updateEdgeWeights();
@@ -493,8 +529,9 @@ void RoutingInst::rrRoute()
 
 		if(deltaViolation > 0) {
 			deltaPenalty = -deltaPenalty;
+			penalty += deltaPenalty;
 		}
-		penalty += deltaPenalty;
+
 		
 
 		lastViolation = violations;
@@ -504,7 +541,7 @@ void RoutingInst::rrRoute()
 				return totalEdgeWeight(n1) > totalEdgeWeight(n2);
 			});
 		}
-
+		SetHandler signalHandlerSetting(SIGINT);
 		ProgressBar pbar(cout);
 		pbar.max = nets.size();
 		PeriodicRunner<chrono::milliseconds> printer(chrono::milliseconds(200));
@@ -527,6 +564,11 @@ void RoutingInst::rrRoute()
 				         minutes, ":", setw(2), setfill('0'), seconds, setfill(' '))
 				.writeln(setw(32), "Overflow penalty: ", penalty)
 				.writeln(setw(32), "Violations: ", lastViolation, " (delta ", deltaViolation, ")");
+			if(signalHandlerCalls > 0) {
+				pbar
+					.writeln("\033[31m^C pressed. Will write output and terminate at end of current RRR iteration.")
+					.writeln("To stop immediately without writing output press ^C again.\033[0m");
+			}
 		};
 
 
