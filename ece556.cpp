@@ -529,9 +529,8 @@ void RoutingInst::rrRoute()
 
 		if(deltaViolation > 0) {
 			deltaPenalty = -deltaPenalty;
-			penalty += deltaPenalty;
 		}
-
+			penalty += deltaPenalty;
 		
 
 		lastViolation = violations;
