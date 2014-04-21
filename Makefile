@@ -5,8 +5,12 @@ LIBFLAGS :=
 
 OBJS := $(patsubst %.cpp,%.o, $(wildcard *.cpp))
 
-#OPTIMIZATIONS := -O2 -DNDEBUG -flto
-OPTIMIZATIONS := -O2 -flto
+OPTIMIZATIONS := -O2 -DNDEBUG -flto
+
+ROUTER=ROUTE.exe
+
+all: release
+
 
 debug: CXXFLAGS += -g
 debug: route
@@ -15,11 +19,11 @@ profile: CXXFLAGS += $(OPTIMIZATIONS) -g -pg
 profile: route
 
 release: CXXFLAGS+= $(OPTIMIZATIONS)
-release: route
+release: $(ROUTER)
 
 # link
-route: $(OBJS) main.o
-	$(CXX) $(CXXFLAGS) $(OBJS) $(LIBFLAGS) -o route
+$(ROUTER): $(OBJS) main.o
+	$(CXX) $(CXXFLAGS) $(OBJS) $(LIBFLAGS) -o $(ROUTER)
 
 # pull in dependency info for *existing* .o files
 -include $(OBJS:.o=.d)
@@ -49,6 +53,6 @@ route: $(OBJS) main.o
 
 # remove compilation products
 clean:
-	rm -f *.o *.gch *.d route
+	rm -f *.o *.gch *.d $(ROUTER)
 
 .PHONY: clean debug release
