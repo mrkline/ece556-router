@@ -7,6 +7,8 @@
 
 Sam Roth: Changed A* search heuristic to take overflow into account, rather than failing and retrying with a greater overflow tolerance if no way around a blockage could be found.
 
+Robert Buchanan: MST net decomposition (though this was present in the last part). Some minor involement with A* search implementation.
+
                                      adaptec1.gr
 +--------------------+--------------------+--------------------+--------------------+
 |     -d=0 -n=0      |     -d=0 -n=1      |     -d=1 -n=0      |     -d=1 -n=1      |  
