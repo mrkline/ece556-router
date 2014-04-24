@@ -123,23 +123,26 @@ void RoutingInst::aStarRouteSeg(Segment& s)
 	typedef std::pair<int, Point> CostPoint;
 	
 	auto costComp = [&](const CostPoint &p1, const CostPoint &p2) {
-		return p1.first > p2.first;
+		return p1.first + s.p2.l1dist(p1.second) >
+			p2.first + s.p2.l1dist(p2.second);
 	};
 	
 	priority_queue<CostPoint, vector<CostPoint>, decltype(costComp)> open_score(costComp);
 	unordered_map<Point, Point> prev;
 
 	Point p0;
+	int p0_cost;
 
 	assert(s.edges.empty());
 
 	// only the start node is initially open
 	open.emplace(s.p1);
-	open_score.emplace(s.p2.l1dist(s.p1), s.p1);
+	open_score.emplace(0, s.p1);
 
 	// stop when end node is reach or when all nodes are explored
 	while (closed.count(s.p2) == 0 && !open.empty()) {
 		// move top canidate to 'closed' and evaluate neighbors
+		p0_cost = open_score.top().first;
 		p0 = open_score.top().second;
 		open_score.pop();
 		open.erase(p0);
@@ -157,7 +160,10 @@ void RoutingInst::aStarRouteSeg(Segment& s)
 
 			// queue valid neighbors for future examination
 			open.emplace(p);
-			open_score.emplace(s.p2.l1dist(p) + penalty*edgeUtil(p, p0) / (edgeCap(p, p0)+1), p);
+			open_score.emplace(
+				p0_cost + 1 +
+				penalty*edgeUtil(p, p0) / (edgeCap(p, p0)+1),
+				p);
 			prev[p] = p0;
 		}
 	}
@@ -506,6 +512,7 @@ void RoutingInst::rrRoute()
 	const time_t startTime = time(nullptr);
 	
 	for(int iter = 0; true /* no iteration limit */; ++iter) {
+		break;
 		if(system_clock::now() >= procedureStartTime + timeLimit) {
 			cout << "Terminating due to expiration of time limit. Total time taken: " 
 				<< chrono::duration_cast<chrono::seconds>(system_clock::now() - procedureStartTime).count()
