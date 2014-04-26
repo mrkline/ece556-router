@@ -65,6 +65,23 @@ int RoutingInst::edgeWeight(int id) const
 	
 }
 
+int RoutingInst::netSpan(const Net &n) const
+{
+	unordered_set<int> counted;
+	int result = 0;
+
+	for(const auto &route : n.nroute) {
+		for(int edgeID : route.edges) {
+			if (counted.count(edgeID) > 0) continue;
+
+			counted.emplace(edgeID);
+			result++;
+		}
+	}
+
+	return result;
+}
+
 int RoutingInst::edgeWeight(const Edge &e) const
 {
 	return edgeWeight(edgeID(e));
@@ -72,10 +89,14 @@ int RoutingInst::edgeWeight(const Edge &e) const
 
 int RoutingInst::totalEdgeWeight(const Net &n) const
 {
+	unordered_set<int> counted;
 	int result = 0;
 
 	for(const auto &route : n.nroute) {
 		for(int edgeID : route.edges) {
+			if (counted.count(edgeID) > 0) continue;
+
+			counted.emplace(edgeID);
 			result += edgeWeight(edgeID);
 		}
 	}
@@ -257,8 +278,10 @@ void RoutingInst::routeNet(Net& n)
 	assert(n.nroute.empty());
 
 	decomposeNet(n);
-	for (auto &s : n.nroute) {
-		aStarRouteSeg(s);
+
+	#pragma omp parallel for
+	for (unsigned int i = 0; i < n.nroute.size(); i++) {
+		aStarRouteSeg(n.nroute[i]);
 	}
 	// TODO: should inter-segment conflict be handled here, or elsewhere?
 }
@@ -506,13 +529,12 @@ void RoutingInst::rrRoute()
 	cout << "[2/2] Rip up and reroute...\n";
 	
 	
-	int deltaPenalty = -1;
+	int deltaPenalty = 2;
 	int deltaViolation = 0;
 	int lastViolation = 0;
 	const time_t startTime = time(nullptr);
 	
 	for(int iter = 0; true /* no iteration limit */; ++iter) {
-		break;
 		if(system_clock::now() >= procedureStartTime + timeLimit) {
 			cout << "Terminating due to expiration of time limit. Total time taken: " 
 				<< chrono::duration_cast<chrono::seconds>(system_clock::now() - procedureStartTime).count()
@@ -535,16 +557,17 @@ void RoutingInst::rrRoute()
 
 
 		if(deltaViolation > 0) {
-			deltaPenalty = -deltaPenalty;
-		}
 			penalty += deltaPenalty;
+		} else {
+			penalty -= deltaPenalty;
+		}
 		
 
 		lastViolation = violations;
 
 		if(useNetOrdering) {
 			sort(nets.begin(), nets.end(), [&](const Net &n1, const Net &n2) {
-				return totalEdgeWeight(n1) > totalEdgeWeight(n2);
+				return totalEdgeWeight(n1) * netSpan(n2) > totalEdgeWeight(n2) * netSpan(n1);
 			});
 		}
 		SetHandler signalHandlerSetting(SIGINT);
@@ -584,8 +607,9 @@ void RoutingInst::rrRoute()
 				assert(n.nroute.empty());
 
 				decomposeNet(n);
-				for (auto &s : n.nroute) {
-					aStarRouteSeg(s);
+				#pragma omp parallel for
+				for (unsigned int i = 0; i < n.nroute.size(); i++) {
+					aStarRouteSeg(n.nroute[i]);
 				}
 
 				placeNet(n);

@@ -146,9 +146,10 @@ private:
 	int edgeWeight(const Edge &e) const;
 	int edgeWeight(int id) const;
 	int totalEdgeWeight(const Net &n) const;
+	int netSpan(const Net &n) const;
 	bool hasViolation(const Net &n) const;
 
-	int penalty = 15;
+	int penalty = 10;
 
 public:
 	RoutingInst();

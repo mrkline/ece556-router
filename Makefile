@@ -1,6 +1,6 @@
 # Taken largely from http://scottmcpeak.com/autodepend/autodepend.html
 
-CXXFLAGS := -std=c++11 -Wall -Wextra -pedantic
+CXXFLAGS := -std=c++11 -Wall -Wextra -pedantic -fopenmp
 LIBFLAGS :=
 
 OBJS := $(patsubst %.cpp,%.o, $(wildcard *.cpp))
