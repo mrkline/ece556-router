@@ -60,7 +60,7 @@ public:
 
 	/// Use A* search to route a segment with the overflow 
 	/// penalty from the member variable `penalty`.
-	void aStarRouteSeg(Segment& s);
+	void aStarRouteSeg(Path& s);
 	
 	void decomposeNet(Net& n);
 	void routeNet(Net& n);
