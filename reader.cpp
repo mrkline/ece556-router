@@ -138,9 +138,9 @@ void Reader::fail(const std::string &msg)
 }
 
 
-RoutingInst Reader::readRoutingInst()
+RoutingSolver Reader::readRoutingInst()
 {
-	RoutingInst result;
+	RoutingSolver result;
 	readNextToken();
 
 	bool readHdr = false;

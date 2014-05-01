@@ -1,6 +1,7 @@
 // ECE556 - Copyright 2014 University of Wisconsin-Madison.  All Rights Reserved.
 
 #include "ece556.hpp"
+#include "RoutingSolver.hpp"
 #include "reader.hpp"
 #include "colormap.hpp"
 
@@ -134,7 +135,7 @@ int main(int argc, char** argv)
 // 		opts.useNetOrdering << ", " << opts.useNetDecomposition << ".\n";
 
  	/// create a new routing instance
- 	RoutingInst rst;
+ 	RoutingSolver rst;
 
  	/// read benchmark
 	try {

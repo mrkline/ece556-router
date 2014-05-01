@@ -22,9 +22,11 @@
 #include "progress.hpp"
 #include "colormap.hpp"
 
+#include "RoutingSolver.hpp"
+
 using namespace std;
 
-void readBenchmark(const char *fileName, RoutingInst& rst)
+void readBenchmark(const char *fileName, RoutingSolver& rst)
 {
 	ifstream in(fileName);
 	if(!in) {
@@ -33,7 +35,7 @@ void readBenchmark(const char *fileName, RoutingInst& rst)
 	rst = readRoutingInst(in);
 }
 
-void RoutingInst::updateEdgeWeights()
+void RoutingSolver::updateEdgeWeights()
 {
 	edgeInfos.resize(edgeCaps.size());
 
@@ -52,7 +54,7 @@ void RoutingInst::updateEdgeWeights()
 }
 
 
-int RoutingInst::edgeWeight(int id) const
+int RoutingSolver::edgeWeight(int id) const
 {
 	size_t index = id;
 
@@ -65,7 +67,7 @@ int RoutingInst::edgeWeight(int id) const
 	
 }
 
-int RoutingInst::netSpan(const Net &n) const
+int RoutingSolver::netSpan(const Net &n) const
 {
 	unordered_set<int> counted;
 	int result = 0;
@@ -82,12 +84,12 @@ int RoutingInst::netSpan(const Net &n) const
 	return result;
 }
 
-int RoutingInst::edgeWeight(const Edge &e) const
+int RoutingSolver::edgeWeight(const Edge &e) const
 {
 	return edgeWeight(edgeID(e));
 }
 
-int RoutingInst::totalEdgeWeight(const Net &n) const
+int RoutingSolver::totalEdgeWeight(const Net &n) const
 {
 	unordered_set<int> counted;
 	int result = 0;
@@ -105,7 +107,7 @@ int RoutingInst::totalEdgeWeight(const Net &n) const
 }
 
 
-bool RoutingInst::neighbor(Point &p, unsigned int caseNumber)
+bool RoutingSolver::neighbor(Point &p, unsigned int caseNumber)
 {
 	switch(caseNumber)
 	{
@@ -124,7 +126,7 @@ bool RoutingInst::neighbor(Point &p, unsigned int caseNumber)
 
 
 
-bool RoutingInst::hasViolation(const Net &n) const
+bool RoutingSolver::hasViolation(const Net &n) const
 {
 	for(const auto &route : n.nroute) {
 		for(int id : route.edges) {
@@ -137,7 +139,7 @@ bool RoutingInst::hasViolation(const Net &n) const
 	return false;
 }
 
-void RoutingInst::aStarRouteSeg(Segment& s)
+void RoutingSolver::aStarRouteSeg(Segment& s)
 {
 	unordered_set<Point> open;
 	unordered_set<Point> closed;
@@ -196,7 +198,7 @@ void RoutingInst::aStarRouteSeg(Segment& s)
 	
 }
 
-void RoutingInst::decomposeNetMST(Net &n)
+void RoutingSolver::decomposeNetMST(Net &n)
 {
 	Segment s;
 
@@ -251,7 +253,7 @@ void RoutingInst::decomposeNetMST(Net &n)
 	
 }
 
-void RoutingInst::decomposeNetSimple(Net &n)
+void RoutingSolver::decomposeNetSimple(Net &n)
 {
 	if(n.pins.empty()) return; // (assumed nonempty by loop condition)
 	
@@ -262,7 +264,7 @@ void RoutingInst::decomposeNetSimple(Net &n)
 
 
 // decompose pins into a MST based on L1 distance
-void RoutingInst::decomposeNet(Net& n)
+void RoutingSolver::decomposeNet(Net& n)
 {
 	if(useNetDecomposition) {
 		decomposeNetMST(n);
@@ -273,7 +275,7 @@ void RoutingInst::decomposeNet(Net& n)
 }
 
 // route an unrouted net
-void RoutingInst::routeNet(Net& n)
+void RoutingSolver::routeNet(Net& n)
 {
 	assert(n.nroute.empty());
 
@@ -286,7 +288,7 @@ void RoutingInst::routeNet(Net& n)
 	// TODO: should inter-segment conflict be handled here, or elsewhere?
 }
 
-void RoutingInst::placeNet(const Net& n)
+void RoutingSolver::placeNet(const Net& n)
 {
 	unordered_set<int> placed;
 
@@ -302,7 +304,7 @@ void RoutingInst::placeNet(const Net& n)
 }
 
 // rip up the route from an old net and return it
-Route RoutingInst::ripNet(Net& n)
+Route RoutingSolver::ripNet(Net& n)
 {
 	unordered_set<int> ripped;
 	Route old;
@@ -320,7 +322,7 @@ Route RoutingInst::ripNet(Net& n)
 	return old;
 }
 
-int RoutingInst::countViolations()
+int RoutingSolver::countViolations()
 {
 	int v = 0;
 	for (unsigned int i = 0; i < edgeUtils.size(); i++) {
@@ -333,7 +335,7 @@ int RoutingInst::countViolations()
 }
 
 
-void RoutingInst::violationSvg(const std::string& fileName)
+void RoutingSolver::violationSvg(const std::string& fileName)
 {
 	ofstream svg(fileName);
 	Edge e;
@@ -367,7 +369,7 @@ void RoutingInst::violationSvg(const std::string& fileName)
 
 }
 
-void RoutingInst::toSvg(const std::string& fileName)
+void RoutingSolver::toSvg(const std::string& fileName)
 {
 	ofstream svg(fileName);
 
@@ -391,7 +393,7 @@ void RoutingInst::toSvg(const std::string& fileName)
 
 }
 
-void RoutingInst::reorderNets()
+void RoutingSolver::reorderNets()
 {
 
 	sort(nets.begin(), nets.end(), [](const Net &n1, const Net &n2) {
@@ -400,7 +402,7 @@ void RoutingInst::reorderNets()
 	});
 }
 
-void RoutingInst::solveRouting()
+void RoutingSolver::solveRouting()
 {
 	if (useNetOrdering)
 		reorderNets();
@@ -439,7 +441,7 @@ void RoutingInst::solveRouting()
 	logViolationSvg();
 }
 
-void RoutingInst::logViolationSvg()
+void RoutingSolver::logViolationSvg()
 {
 	if(!emitSVG) return;
 	if(!htmlLog) {
@@ -474,12 +476,12 @@ void RoutingInst::logViolationSvg()
 	*htmlLog << "<div class=\"background\"><img src=\"" << filename << "\"></div>\n" << std::flush;
 	std::cout << "violations logged to [" << filename << "]\n";
 }
-RoutingInst::RoutingInst()
+RoutingSolver::RoutingSolver()
 {
 
 }
 
-RoutingInst::~RoutingInst()
+RoutingSolver::~RoutingSolver()
 {
 	if(htmlLog && htmlLog.unique() && emitSVG)
 		*htmlLog << "</body></html>";
@@ -513,7 +515,7 @@ namespace
 	};
 }
 
-void RoutingInst::rrRoute()
+void RoutingSolver::rrRoute()
 {
 	using std::chrono::system_clock;
 
@@ -633,7 +635,7 @@ string strerrno()
 
 } // end anonymous namespace
 
-void RoutingInst::writeOutput(const char *outRouteFile)
+void RoutingSolver::writeOutput(const char *outRouteFile)
 {
 	ofstream out(outRouteFile);
 	if(!out) {

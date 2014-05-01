@@ -4,7 +4,7 @@
 #include <string>
 #include <stdexcept>
 
-#include "ece556.hpp"
+#include "RoutingSolver.hpp"
 
 struct ParseError: public std::runtime_error {
 	ParseError(const std::string &msg)
@@ -12,7 +12,7 @@ struct ParseError: public std::runtime_error {
 	{ }
 };
 
-/// Reads a RoutingInst (use once, then discard)
+/// Reads a RoutingSolver (use once, then discard)
 /// Prefer using the convenience function, readRoutingInst(std::istream &),
 /// over using this class directly.
 struct Reader {
@@ -51,11 +51,11 @@ public:
 	, lineNum(1)
 	{ }
 
-	RoutingInst readRoutingInst();
+	RoutingSolver readRoutingInst();
 };
 
 /// Convenience API for Reader
-inline RoutingInst readRoutingInst(std::istream &in)
+inline RoutingSolver readRoutingInst(std::istream &in)
 {
 	return Reader(in).readRoutingInst();
 }
