@@ -515,10 +515,10 @@ namespace
 
 void RoutingInst::rrRoute()
 {
-	using std::chrono::system_clock;
+	using std::chrono::steady_clock;
 
 	
-	const auto procedureStartTime = system_clock::now();
+	const auto procedureStartTime = steady_clock::now();
 	
 	// get initial solution
 	cout << "[1/2] Creating initial solution...\n";
@@ -535,9 +535,9 @@ void RoutingInst::rrRoute()
 	const time_t startTime = time(nullptr);
 	
 	for(int iter = 0; true /* no iteration limit */; ++iter) {
-		if(system_clock::now() >= procedureStartTime + timeLimit) {
+		if(steady_clock::now() >= procedureStartTime + timeLimit) {
 			cout << "Terminating due to expiration of time limit. Total time taken: " 
-				<< chrono::duration_cast<chrono::seconds>(system_clock::now() - procedureStartTime).count()
+				<< chrono::duration_cast<chrono::seconds>(steady_clock::now() - procedureStartTime).count()
 				<< " seconds.\n";
 			break;
 		}
@@ -581,7 +581,7 @@ void RoutingInst::rrRoute()
 		{
 			pbar.value = netsConsidered;
 			
-			auto elap = system_clock::now() - procedureStartTime;
+			auto elap = steady_clock::now() - procedureStartTime;
 			int minutes = chrono::duration_cast<chrono::minutes>(elap).count();
 			int seconds = int(chrono::duration_cast<chrono::seconds>(elap).count()) % 60;
 			pbar
