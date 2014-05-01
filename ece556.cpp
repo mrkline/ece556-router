@@ -137,7 +137,7 @@ bool RoutingInst::hasViolation(const Net &n) const
 	return false;
 }
 
-void RoutingInst::aStarRouteSeg(Segment& s)
+void RoutingInst::aStarRouteSeg(Path& s)
 {
 	unordered_set<Point> open;
 	unordered_set<Point> closed;
@@ -198,7 +198,7 @@ void RoutingInst::aStarRouteSeg(Segment& s)
 
 void RoutingInst::decomposeNetMST(Net &n)
 {
-	Segment s;
+	Path s;
 
 	unordered_map<Point, Point> adj;
 	unordered_map<Point, int> dist;

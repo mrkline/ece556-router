@@ -42,34 +42,32 @@ namespace std {
 	};
 }
 
-/// A segment consisting of two points and edges
-/// This is not, strictly speaking, a line segment, but is actually a linear spline (a collection of
-/// connected line segments).
-struct Segment {
+/// A path consisting of a start, an end, and edges between the two
+struct Path {
 	Point p1 ; ///< start point of a segment
 	Point p2 ; ///< end point of a segment
 
 	std::vector<int> edges; ///< Edges representing the segment
 
-	Segment() = default;
+	Path() = default;
 
-	Segment(const Point& cp1, const Point& cp2) :
+	Path(const Point& cp1, const Point& cp2) :
 		p1(cp1),
 		p2(cp2),
 		edges()
 	{ }
 
-	Segment(const Segment&) = default;
+	Path(const Path&) = default;
 
-	Segment(Segment&& o) :
+	Path(Path&& o) :
 		p1(o.p1),
 		p2(o.p2),
 		edges(move(o.edges))
 	{ }
 
-	Segment& operator=(const Segment&) = default;
+	Path& operator=(const Path&) = default;
 
-	Segment& operator=(Segment&& o)
+	Path& operator=(Path&& o)
 	{
 		p1 = o.p1;
 		p2 = o.p2;
@@ -99,8 +97,8 @@ struct Edge {
 	}
 };
 
-/// A route is a series of segments
-typedef std::vector<Segment> Route;
+/// A route is a series of paths
+typedef std::vector<Path> Route;
 
 
 /// A structure to represent nets
@@ -177,7 +175,7 @@ public:
 
 	/// Use A* search to route a segment with the overflow 
 	/// penalty from the member variable `penalty`.
-	void aStarRouteSeg(Segment& s);
+	void aStarRouteSeg(Path& s);
 	
 	void decomposeNet(Net& n);
 	void routeNet(Net& n);
