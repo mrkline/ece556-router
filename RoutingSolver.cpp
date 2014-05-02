@@ -12,6 +12,8 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <csignal>
+#include <thread>
+#include <future>
 
 
 #include "ece556.hpp"
@@ -22,6 +24,7 @@
 #include "progress.hpp"
 #include "colormap.hpp"
 #include "RoutingInst.hpp"
+#include "IteratorUtils.hpp"
 
 #include "RoutingSolver.hpp"
 
@@ -190,6 +193,34 @@ void RoutingSolver::aStarRouteSeg(Path& s)
 	
 }
 
+void decomposeNets(std::vector<Net>& nets, bool useNetDecomposition)
+{
+	auto partitionPoints = partitionCollection(begin(nets), end(nets),
+	                                           max(2u, thread::hardware_concurrency()));
+
+
+	/* Lambdas in lambdas. Does anyone else love lambdas? Yaaaay lambdas!
+	 * But actually, what the hell are we doing here?
+	 * 1. We just broke the list of nets into equally-ish sized bits
+	 *    based on the number of cores we have to run threads on.
+	 * 2. For each of those bits, run a seperate thread which decomposes the nets.
+	 * 3. Wait for them to finish.
+	 *
+	 * Check out std::future and std::async for each of these operations
+	 */
+	vector<future<void>> futures;
+	for (size_t i = 1; i < partitionPoints.size(); ++i) {
+		futures.emplace_back(async(launch::async, [=] {
+			for_each(partitionPoints[i - 1], partitionPoints[i], [=](Net& n) {
+				decomposeNet(n, useNetDecomposition);
+			});
+		}));
+	}
+
+	for (auto& future : futures)
+		future.wait();
+}
+
 void decomposeNetMST(Net &n)
 {
 	Path s;
@@ -270,8 +301,6 @@ void decomposeNet(Net& n, bool useNetDecomposition)
 void RoutingSolver::routeNet(Net& n)
 {
 	assert(n.nroute.empty());
-
-	decomposeNet(n, useNetDecomposition);
 
 	#pragma omp parallel for
 	for (unsigned int i = 0; i < n.nroute.size(); i++) {
@@ -420,6 +449,8 @@ void RoutingSolver::solveRouting()
 			.writeln(setw(32), "Elapsed time: ", time(0) - startTime, " seconds")
 			.writeln(setw(32), "Overflow penalty: ", penalty);
 	};
+
+	decomposeNets(nets, useNetDecomposition);
 
 	// find an initial solution
 	for (auto &n : nets) {
@@ -600,6 +631,7 @@ void RoutingSolver::rrRoute()
 			}
 		};
 
+		decomposeNets(nets, useNetDecomposition);
 
 		for(auto &n : nets) {
 			if(hasViolation(n)) {

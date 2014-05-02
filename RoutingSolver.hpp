@@ -6,6 +6,8 @@
 #include "ece556.hpp"
 #include "RoutingInst.hpp"
 
+void decomposeNets(std::vector<Net>& nets, bool useNetDcomposition);
+
 void decomposeNetSimple(Net &n);
 void decomposeNetMST(Net &n);
 void decomposeNet(Net& n, bool useNetDecomposition);
