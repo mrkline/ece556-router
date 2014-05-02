@@ -1,7 +1,11 @@
 # Taken largely from http://scottmcpeak.com/autodepend/autodepend.html
 
-CXXFLAGS := -std=c++11 -Wall -Wextra -pedantic -fopenmp
-LIBFLAGS :=
+
+OPENMP_FLAGS := -fopenmp
+# Note: use of "=" instead of ":=" was intentional. This allows Makefile.user
+# to override OPENMP_FLAGS.
+CXXFLAGS      = -std=c++11 -Wall -Wextra -pedantic $(OPENMP_FLAGS)
+LIBFLAGS     := 
 
 OBJS := $(patsubst %.cpp,%.o, $(wildcard *.cpp))
 
@@ -56,3 +60,5 @@ clean:
 	rm -f *.o *.gch *.d $(ROUTER)
 
 .PHONY: clean debug release
+
+-include Makefile.user

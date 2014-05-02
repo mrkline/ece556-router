@@ -1,7 +1,9 @@
 // ECE556 - Copyright 2014 University of Wisconsin-Madison.  All Rights Reserved.
 
 #include "ece556.hpp"
+#include "RoutingSolver.hpp"
 #include "reader.hpp"
+#include "writer.hpp"
 #include "colormap.hpp"
 
 
@@ -119,26 +121,57 @@ static void testReadingInput()
 	}
 }
 
+namespace {
+
+std::string strerrno()
+{
+	return strerror(errno);
+}
+
+
+RoutingInst readRoutingInstFromPath(const std::string &path)
+{
+	std::ifstream in(path);
+	if(!in)
+	{
+		throw std::runtime_error("Couldn't open file: " + strerrno());
+	}
+	return readRoutingInst(in);
+}
+
+void writeToPath(const std::string &path, const RoutingInst &inst)
+{
+	std::ofstream out(path);
+	if(!out)
+	{
+		throw std::runtime_error("Couldn't open output file: " + strerrno());
+	}
+
+	write(out, inst);
+
+	out.close();
+
+	if(!out)
+	{
+		throw std::runtime_error("Couldn't close output file: " + strerrno());
+	}
+}
+
+} // end anonymous namespace
+
+
 int main(int argc, char** argv)
 {
-	// TODO: I'd like to put these tests in separate binaries, but that would mess with
-	// the makefile.
 	static_cast<void>(testReadingInput); // suppress unused warning
-// 	testReadingInput(); return 0;
-// 	testEdgeID(); return 0;
-
 
 	auto opts = parseOpts(argc, argv);
 
-// 	std::cout << "options parsed: " << opts.inputBenchmark << ", " << opts.outputFile << ", " <<
-// 		opts.useNetOrdering << ", " << opts.useNetDecomposition << ".\n";
-
  	/// create a new routing instance
- 	RoutingInst rst;
 
  	/// read benchmark
 	try {
-		readBenchmark(opts.inputBenchmark.c_str(), rst);
+		auto problem = readRoutingInstFromPath(opts.inputBenchmark);
+		RoutingSolver rst(problem);
 
 		rst.useNetDecomposition = opts.useNetDecomposition;
 		rst.useNetOrdering = opts.useNetOrdering;
@@ -146,13 +179,10 @@ int main(int argc, char** argv)
 		rst.emitSVG = opts.emitSVG;
 
 		/// run actual routing
-// 		rst.solveRouting();
 		rst.rrRoute();
 
 		/// write the result
-		rst.writeOutput(opts.outputFile.c_str());
-
-		printf("\nDONE!\n");
+		writeToPath(opts.outputFile, problem);
 		return 0;
 	}
 	catch (std::exception& ex) {

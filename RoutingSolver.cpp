@@ -12,6 +12,8 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <csignal>
+#include <thread>
+#include <future>
 
 
 #include "ece556.hpp"
@@ -21,19 +23,14 @@
 #include "PeriodicRunner.hpp"
 #include "progress.hpp"
 #include "colormap.hpp"
+#include "RoutingInst.hpp"
+#include "IteratorUtils.hpp"
+
+#include "RoutingSolver.hpp"
 
 using namespace std;
 
-void readBenchmark(const char *fileName, RoutingInst& rst)
-{
-	ifstream in(fileName);
-	if(!in) {
-		throw runtime_error("I/O Error");
-	}
-	rst = readRoutingInst(in);
-}
-
-void RoutingInst::updateEdgeWeights()
+void RoutingSolver::updateEdgeWeights()
 {
 	edgeInfos.resize(edgeCaps.size());
 
@@ -52,7 +49,7 @@ void RoutingInst::updateEdgeWeights()
 }
 
 
-int RoutingInst::edgeWeight(int id) const
+int RoutingSolver::edgeWeight(int id) const
 {
 	size_t index = id;
 
@@ -65,7 +62,7 @@ int RoutingInst::edgeWeight(int id) const
 	
 }
 
-int RoutingInst::netSpan(const Net &n) const
+int RoutingSolver::netSpan(const Net &n) const
 {
 	unordered_set<int> counted;
 	int result = 0;
@@ -82,12 +79,12 @@ int RoutingInst::netSpan(const Net &n) const
 	return result;
 }
 
-int RoutingInst::edgeWeight(const Edge &e) const
+int RoutingSolver::edgeWeight(const Edge &e) const
 {
 	return edgeWeight(edgeID(e));
 }
 
-int RoutingInst::totalEdgeWeight(const Net &n) const
+int RoutingSolver::totalEdgeWeight(const Net &n) const
 {
 	unordered_set<int> counted;
 	int result = 0;
@@ -105,7 +102,7 @@ int RoutingInst::totalEdgeWeight(const Net &n) const
 }
 
 
-bool RoutingInst::neighbor(Point &p, unsigned int caseNumber)
+bool RoutingSolver::neighbor(Point &p, unsigned int caseNumber)
 {
 	switch(caseNumber)
 	{
@@ -124,7 +121,7 @@ bool RoutingInst::neighbor(Point &p, unsigned int caseNumber)
 
 
 
-bool RoutingInst::hasViolation(const Net &n) const
+bool RoutingSolver::hasViolation(const Net &n) const
 {
 	for(const auto &route : n.nroute) {
 		for(int id : route.edges) {
@@ -137,7 +134,7 @@ bool RoutingInst::hasViolation(const Net &n) const
 	return false;
 }
 
-void RoutingInst::aStarRouteSeg(Path& s)
+void RoutingSolver::aStarRouteSeg(Path& s)
 {
 	unordered_set<Point> open;
 	unordered_set<Point> closed;
@@ -196,7 +193,35 @@ void RoutingInst::aStarRouteSeg(Path& s)
 	
 }
 
-void RoutingInst::decomposeNetMST(Net &n)
+void decomposeNets(std::vector<Net>& nets, bool useNetDecomposition)
+{
+	auto partitionPoints = partitionCollection(begin(nets), end(nets),
+	                                           max(2u, thread::hardware_concurrency()));
+
+
+	/* Lambdas in lambdas. Does anyone else love lambdas? Yaaaay lambdas!
+	 * But actually, what the hell are we doing here?
+	 * 1. We just broke the list of nets into equally-ish sized bits
+	 *    based on the number of cores we have to run threads on.
+	 * 2. For each of those bits, run a seperate thread which decomposes the nets.
+	 * 3. Wait for them to finish.
+	 *
+	 * Check out std::future and std::async for each of these operations
+	 */
+	vector<future<void>> futures;
+	for (size_t i = 1; i < partitionPoints.size(); ++i) {
+		futures.emplace_back(async(launch::async, [=] {
+			for_each(partitionPoints[i - 1], partitionPoints[i], [=](Net& n) {
+				decomposeNet(n, useNetDecomposition);
+			});
+		}));
+	}
+
+	for (auto& future : futures)
+		future.wait();
+}
+
+void decomposeNetMST(Net &n)
 {
 	Path s;
 
@@ -251,7 +276,7 @@ void RoutingInst::decomposeNetMST(Net &n)
 	
 }
 
-void RoutingInst::decomposeNetSimple(Net &n)
+void decomposeNetSimple(Net &n)
 {
 	if(n.pins.empty()) return; // (assumed nonempty by loop condition)
 	
@@ -262,7 +287,7 @@ void RoutingInst::decomposeNetSimple(Net &n)
 
 
 // decompose pins into a MST based on L1 distance
-void RoutingInst::decomposeNet(Net& n)
+void decomposeNet(Net& n, bool useNetDecomposition)
 {
 	if(useNetDecomposition) {
 		decomposeNetMST(n);
@@ -273,11 +298,9 @@ void RoutingInst::decomposeNet(Net& n)
 }
 
 // route an unrouted net
-void RoutingInst::routeNet(Net& n)
+void RoutingSolver::routeNet(Net& n)
 {
 	assert(n.nroute.empty());
-
-	decomposeNet(n);
 
 	#pragma omp parallel for
 	for (unsigned int i = 0; i < n.nroute.size(); i++) {
@@ -286,7 +309,7 @@ void RoutingInst::routeNet(Net& n)
 	// TODO: should inter-segment conflict be handled here, or elsewhere?
 }
 
-void RoutingInst::placeNet(const Net& n)
+void RoutingSolver::placeNet(const Net& n)
 {
 	unordered_set<int> placed;
 
@@ -302,7 +325,7 @@ void RoutingInst::placeNet(const Net& n)
 }
 
 // rip up the route from an old net and return it
-Route RoutingInst::ripNet(Net& n)
+Route RoutingSolver::ripNet(Net& n)
 {
 	unordered_set<int> ripped;
 	Route old;
@@ -320,7 +343,7 @@ Route RoutingInst::ripNet(Net& n)
 	return old;
 }
 
-int RoutingInst::countViolations()
+int RoutingSolver::countViolations()
 {
 	int v = 0;
 	for (unsigned int i = 0; i < edgeUtils.size(); i++) {
@@ -333,7 +356,7 @@ int RoutingInst::countViolations()
 }
 
 
-void RoutingInst::violationSvg(const std::string& fileName)
+void RoutingSolver::violationSvg(const std::string& fileName)
 {
 	ofstream svg(fileName);
 	Edge e;
@@ -367,7 +390,7 @@ void RoutingInst::violationSvg(const std::string& fileName)
 
 }
 
-void RoutingInst::toSvg(const std::string& fileName)
+void RoutingSolver::toSvg(const std::string& fileName)
 {
 	ofstream svg(fileName);
 
@@ -391,7 +414,7 @@ void RoutingInst::toSvg(const std::string& fileName)
 
 }
 
-void RoutingInst::reorderNets()
+void RoutingSolver::reorderNets()
 {
 
 	sort(nets.begin(), nets.end(), [](const Net &n1, const Net &n2) {
@@ -400,7 +423,7 @@ void RoutingInst::reorderNets()
 	});
 }
 
-void RoutingInst::solveRouting()
+void RoutingSolver::solveRouting()
 {
 	if (useNetOrdering)
 		reorderNets();
@@ -427,6 +450,8 @@ void RoutingInst::solveRouting()
 			.writeln(setw(32), "Overflow penalty: ", penalty);
 	};
 
+	decomposeNets(nets, useNetDecomposition);
+
 	// find an initial solution
 	for (auto &n : nets) {
 		routeNet(n);
@@ -439,7 +464,7 @@ void RoutingInst::solveRouting()
 	logViolationSvg();
 }
 
-void RoutingInst::logViolationSvg()
+void RoutingSolver::logViolationSvg()
 {
 	if(!emitSVG) return;
 	if(!htmlLog) {
@@ -474,12 +499,18 @@ void RoutingInst::logViolationSvg()
 	*htmlLog << "<div class=\"background\"><img src=\"" << filename << "\"></div>\n" << std::flush;
 	std::cout << "violations logged to [" << filename << "]\n";
 }
-RoutingInst::RoutingInst()
+RoutingSolver::RoutingSolver(RoutingInst &inst)
+: gx(inst.gx)
+, gy(inst.gy)
+, cap(inst.cap)
+, nets(inst.nets)
+, edgeCaps(inst.edgeCaps)
+, inst(inst)
 {
 
 }
 
-RoutingInst::~RoutingInst()
+RoutingSolver::~RoutingSolver()
 {
 	if(htmlLog && htmlLog.unique() && emitSVG)
 		*htmlLog << "</body></html>";
@@ -513,7 +544,7 @@ namespace
 	};
 }
 
-void RoutingInst::rrRoute()
+void RoutingSolver::rrRoute()
 {
 	using std::chrono::steady_clock;
 
@@ -523,7 +554,7 @@ void RoutingInst::rrRoute()
 	// get initial solution
 	cout << "[1/2] Creating initial solution...\n";
 	solveRouting();
-	
+
 	// rrr
 	if(!useNetOrdering && !useNetDecomposition) return;
 	cout << "[2/2] Rip up and reroute...\n";
@@ -600,17 +631,12 @@ void RoutingInst::rrRoute()
 			}
 		};
 
+		decomposeNets(nets, useNetDecomposition);
 
 		for(auto &n : nets) {
 			if(hasViolation(n)) {
 				ripNet(n);
-				assert(n.nroute.empty());
-
-				decomposeNet(n);
-				#pragma omp parallel for
-				for (unsigned int i = 0; i < n.nroute.size(); i++) {
-					aStarRouteSeg(n.nroute[i]);
-				}
+				routeNet(n);
 
 				placeNet(n);
 
@@ -622,28 +648,6 @@ void RoutingInst::rrRoute()
 		}
 		printFunc();
 		logViolationSvg();
-	}
-}
-namespace {
-
-string strerrno()
-{
-	return strerror(errno);
-}
-
-} // end anonymous namespace
-
-void RoutingInst::writeOutput(const char *outRouteFile)
-{
-	ofstream out(outRouteFile);
-	if(!out) {
-		throw runtime_error(string("opening ") + outRouteFile + ": " + strerrno());
-	}
-	write(out, *this);
-	out.close(); // close explicitly to allow for printing a warning message if it fails
-
-	if(!out) {
-		cerr << "warning: error closing file: " << strerrno() << "\n";
 	}
 }
 

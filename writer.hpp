@@ -1,6 +1,6 @@
 #ifndef WRITER_HPP_6W2E2N
 #define WRITER_HPP_6W2E2N
-#include "ece556.hpp"
+#include "RoutingInst.hpp"
 
 struct Writer
 {
