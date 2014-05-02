@@ -6,11 +6,12 @@
 #include "ece556.hpp"
 #include "RoutingInst.hpp"
 
+void decomposeNetSimple(Net &n);
+void decomposeNetMST(Net &n);
+void decomposeNet(Net& n, bool useNetDecomposition);
 
 /// Solves a routing instance
 class RoutingSolver {
-	void decomposeNetSimple(Net &n);
-	void decomposeNetMST(Net &n);
 
 	struct EdgeInfo
 	{
@@ -101,7 +102,6 @@ public:
 	/// penalty from the member variable `penalty`.
 	void aStarRouteSeg(Path& s);
 	
-	void decomposeNet(Net& n);
 	void routeNet(Net& n);
 	void placeNet(const Net& n);
 	Route ripNet(Net& n);

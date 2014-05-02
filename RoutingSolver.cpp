@@ -190,7 +190,7 @@ void RoutingSolver::aStarRouteSeg(Path& s)
 	
 }
 
-void RoutingSolver::decomposeNetMST(Net &n)
+void decomposeNetMST(Net &n)
 {
 	Path s;
 
@@ -245,7 +245,7 @@ void RoutingSolver::decomposeNetMST(Net &n)
 	
 }
 
-void RoutingSolver::decomposeNetSimple(Net &n)
+void decomposeNetSimple(Net &n)
 {
 	if(n.pins.empty()) return; // (assumed nonempty by loop condition)
 	
@@ -256,7 +256,7 @@ void RoutingSolver::decomposeNetSimple(Net &n)
 
 
 // decompose pins into a MST based on L1 distance
-void RoutingSolver::decomposeNet(Net& n)
+void decomposeNet(Net& n, bool useNetDecomposition)
 {
 	if(useNetDecomposition) {
 		decomposeNetMST(n);
@@ -271,7 +271,7 @@ void RoutingSolver::routeNet(Net& n)
 {
 	assert(n.nroute.empty());
 
-	decomposeNet(n);
+	decomposeNet(n, useNetDecomposition);
 
 	#pragma omp parallel for
 	for (unsigned int i = 0; i < n.nroute.size(); i++) {
@@ -523,7 +523,7 @@ void RoutingSolver::rrRoute()
 	// get initial solution
 	cout << "[1/2] Creating initial solution...\n";
 	solveRouting();
-	
+	return;
 	// rrr
 	if(!useNetOrdering && !useNetDecomposition) return;
 	cout << "[2/2] Rip up and reroute...\n";
@@ -604,13 +604,7 @@ void RoutingSolver::rrRoute()
 		for(auto &n : nets) {
 			if(hasViolation(n)) {
 				ripNet(n);
-				assert(n.nroute.empty());
-
-				decomposeNet(n);
-				#pragma omp parallel for
-				for (unsigned int i = 0; i < n.nroute.size(); i++) {
-					aStarRouteSeg(n.nroute[i]);
-				}
+				routeNet(n);
 
 				placeNet(n);
 
