@@ -468,12 +468,13 @@ void RoutingSolver::logViolationSvg()
 	*htmlLog << "<div class=\"background\"><img src=\"" << filename << "\"></div>\n" << std::flush;
 	std::cout << "violations logged to [" << filename << "]\n";
 }
-RoutingSolver::RoutingSolver(RoutingInst &problem)
-: gx(problem.gx)
-, gy(problem.gy)
-, cap(problem.cap)
-, nets(problem.nets)
-, edgeCaps(problem.edgeCaps)
+RoutingSolver::RoutingSolver(RoutingInst &inst)
+: gx(inst.gx)
+, gy(inst.gy)
+, cap(inst.cap)
+, nets(inst.nets)
+, edgeCaps(inst.edgeCaps)
+, inst(inst)
 {
 
 }
@@ -621,28 +622,6 @@ void RoutingSolver::rrRoute()
 		}
 		printFunc();
 		logViolationSvg();
-	}
-}
-namespace {
-
-string strerrno()
-{
-	return strerror(errno);
-}
-
-} // end anonymous namespace
-
-void RoutingSolver::writeOutput(const char *outRouteFile)
-{
-	ofstream out(outRouteFile);
-	if(!out) {
-		throw runtime_error(string("opening ") + outRouteFile + ": " + strerrno());
-	}
-	write(out, *this);
-	out.close(); // close explicitly to allow for printing a warning message if it fails
-
-	if(!out) {
-		cerr << "warning: error closing file: " << strerrno() << "\n";
 	}
 }
 

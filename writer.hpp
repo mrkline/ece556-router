@@ -1,13 +1,13 @@
 #ifndef WRITER_HPP_6W2E2N
 #define WRITER_HPP_6W2E2N
-#include "RoutingSolver.hpp"
+#include "RoutingInst.hpp"
 
 struct Writer
 {
 	std::ostream &out;
-	const RoutingSolver &routing;
+	const RoutingInst &routing;
 	
-	Writer(std::ostream &out, const RoutingSolver &routing)
+	Writer(std::ostream &out, const RoutingInst &routing)
 	: out(out)
 	, routing(routing)
 	{ }
@@ -18,7 +18,7 @@ struct Writer
 	void writeRouting();
 };
 
-inline void write(std::ostream &out, const RoutingSolver &routing)
+inline void write(std::ostream &out, const RoutingInst &routing)
 {
 	Writer(out, routing).writeRouting();
 }

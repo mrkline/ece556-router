@@ -4,8 +4,8 @@
 #include <memory>
 #include <vector>
 #include "ece556.hpp"
+#include "RoutingInst.hpp"
 
-struct RoutingInst;
 
 /// Solves a routing instance
 class RoutingSolver {
@@ -22,8 +22,10 @@ class RoutingSolver {
 		, weight(0)
 		{ }
 	};
+
 	std::vector<EdgeInfo> edgeInfos;
 	std::shared_ptr<std::ofstream> htmlLog;
+
 
 	void updateEdgeWeights();
 	int edgeWeight(const Edge &e) const;
@@ -34,61 +36,19 @@ class RoutingSolver {
 
 	int penalty = 10;
 
-public:
-	RoutingSolver(RoutingInst &problem);
-	~RoutingSolver();
-	bool emitSVG = false;
-	std::chrono::seconds timeLimit = std::chrono::seconds::max();
-	
-	bool useNetDecomposition = true;
-	bool useNetOrdering = true;
-
-
-	int gx; ///< x dimension of the global routing grid
-	int gy; ///< y dimension of the global routing grid
-
-	int cap;
-
-	std::vector<Net> &nets;
-
-	int numEdges; ///< number of edges of the grid
-	std::vector<int> &edgeCaps; ///< array of the actual edge capacities after considering for blockage
-	std::vector<int> edgeUtils; ///< array of edge utilizations
-	
-
-	bool neighbor(Point &p, unsigned int caseNumber);
-
-	/// Use A* search to route a segment with the overflow 
-	/// penalty from the member variable `penalty`.
-	void aStarRouteSeg(Path& s);
-	
-	void decomposeNet(Net& n);
-	void routeNet(Net& n);
-	void placeNet(const Net& n);
-	Route ripNet(Net& n);
-	int countViolations();
-	bool routeValid(Route& r, bool isplaced);
-	void reorderNets();
-	void solveRouting();
-	void writeOutput(const char *outRouteFile);
-	void violationSvg(const std::string& fileName);
-	void toSvg(const std::string& fileName);
-	void logViolationSvg();
-	void rrRoute();
-
 	int edgeID(const Point &p1, const Point &p2) const
 	{
-		return ::edgeID(gx, gy, p1.x, p1.y, p2.x, p2.y);
+		return inst.edgeID(p1, p2);
 	}
 
 	int edgeID(const Edge &e) const
 	{
-		return edgeID(e.p1, e.p2);
+		return inst.edgeID(e);
 	}
 	
 	Edge edge(int edgeID) const
 	{
-		return ::edge(gx, gy, edgeID);
+		return inst.edge(edgeID);
 	}
 
 	void setEdgeUtil(const Point &p1, const Point &p2, int util)
@@ -105,14 +65,56 @@ public:
 
 	void setEdgeCap(const Point &p1, const Point &p2, int capacity)
 	{
-		int id = edgeID(p1, p2);
-		getElementResizingIfNecessary(edgeCaps, id, cap) = capacity;
+		inst.setEdgeCap(p1, p2, capacity);
 	}
 
 	int edgeCap(const Point &p1, const Point &p2) const
 	{
-		return getElementOrDefault(edgeCaps, edgeID(p1, p2), cap);
+		return inst.edgeCap(p1, p2);
 	}
+
+	int gx; ///< x dimension of the global routing grid
+	int gy; ///< y dimension of the global routing grid
+
+	int cap;
+
+	std::vector<Net> &nets;
+
+	int numEdges; ///< number of edges of the grid
+	std::vector<int> &edgeCaps; ///< array of the actual edge capacities after considering for blockage
+	std::vector<int> edgeUtils; ///< array of edge utilizations
+	void logViolationSvg();
+public:
+	RoutingInst &inst;
+	bool emitSVG = false;
+	std::chrono::seconds timeLimit = std::chrono::seconds::max();
+
+	bool useNetDecomposition = true;
+	bool useNetOrdering = true;
+
+	RoutingSolver(RoutingInst &inst);
+	~RoutingSolver();
+
+	bool neighbor(Point &p, unsigned int caseNumber);
+
+	/// Use A* search to route a segment with the overflow 
+	/// penalty from the member variable `penalty`.
+	void aStarRouteSeg(Path& s);
+	
+	void decomposeNet(Net& n);
+	void routeNet(Net& n);
+	void placeNet(const Net& n);
+	Route ripNet(Net& n);
+	int countViolations();
+	bool routeValid(Route& r, bool isplaced);
+	void reorderNets();
+
+
+	void violationSvg(const std::string& fileName);
+	void toSvg(const std::string& fileName);
+
+	void solveRouting();
+	void rrRoute();
 };
 
 
