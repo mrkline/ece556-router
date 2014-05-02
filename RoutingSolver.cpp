@@ -554,7 +554,7 @@ void RoutingSolver::rrRoute()
 	// get initial solution
 	cout << "[1/2] Creating initial solution...\n";
 	solveRouting();
-	return;
+
 	// rrr
 	if(!useNetOrdering && !useNetDecomposition) return;
 	cout << "[2/2] Rip up and reroute...\n";
