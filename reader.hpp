@@ -4,7 +4,7 @@
 #include <string>
 #include <stdexcept>
 
-#include "RoutingSolver.hpp"
+#include "RoutingInst.hpp"
 
 struct ParseError: public std::runtime_error {
 	ParseError(const std::string &msg)
@@ -51,11 +51,11 @@ public:
 	, lineNum(1)
 	{ }
 
-	RoutingSolver readRoutingInst();
+	RoutingInst readRoutingInst();
 };
 
 /// Convenience API for Reader
-inline RoutingSolver readRoutingInst(std::istream &in)
+inline RoutingInst readRoutingInst(std::istream &in)
 {
 	return Reader(in).readRoutingInst();
 }

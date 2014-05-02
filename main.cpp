@@ -135,11 +135,14 @@ int main(int argc, char** argv)
 // 		opts.useNetOrdering << ", " << opts.useNetDecomposition << ".\n";
 
  	/// create a new routing instance
- 	RoutingSolver rst;
 
  	/// read benchmark
 	try {
-		readBenchmark(opts.inputBenchmark.c_str(), rst);
+		std::ifstream benchmarkFile(opts.inputBenchmark);
+		RoutingInst problem = readRoutingInst(benchmarkFile);
+		benchmarkFile.close(); // don't leave open longer than necessary
+
+		RoutingSolver rst(problem);
 
 		rst.useNetDecomposition = opts.useNetDecomposition;
 		rst.useNetOrdering = opts.useNetOrdering;

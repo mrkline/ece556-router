@@ -21,19 +21,11 @@
 #include "PeriodicRunner.hpp"
 #include "progress.hpp"
 #include "colormap.hpp"
+#include "RoutingInst.hpp"
 
 #include "RoutingSolver.hpp"
 
 using namespace std;
-
-void readBenchmark(const char *fileName, RoutingSolver& rst)
-{
-	ifstream in(fileName);
-	if(!in) {
-		throw runtime_error("I/O Error");
-	}
-	rst = readRoutingInst(in);
-}
 
 void RoutingSolver::updateEdgeWeights()
 {
@@ -476,7 +468,12 @@ void RoutingSolver::logViolationSvg()
 	*htmlLog << "<div class=\"background\"><img src=\"" << filename << "\"></div>\n" << std::flush;
 	std::cout << "violations logged to [" << filename << "]\n";
 }
-RoutingSolver::RoutingSolver()
+RoutingSolver::RoutingSolver(RoutingInst &problem)
+: gx(problem.gx)
+, gy(problem.gy)
+, cap(problem.cap)
+, nets(problem.nets)
+, edgeCaps(problem.edgeCaps)
 {
 
 }

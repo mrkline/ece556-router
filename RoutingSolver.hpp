@@ -5,10 +5,10 @@
 #include <vector>
 #include "ece556.hpp"
 
+struct RoutingInst;
 
 /// Solves a routing instance
-struct RoutingSolver {
-private:
+class RoutingSolver {
 	void decomposeNetSimple(Net &n);
 	void decomposeNetMST(Net &n);
 
@@ -35,7 +35,7 @@ private:
 	int penalty = 10;
 
 public:
-	RoutingSolver();
+	RoutingSolver(RoutingInst &problem);
 	~RoutingSolver();
 	bool emitSVG = false;
 	std::chrono::seconds timeLimit = std::chrono::seconds::max();
@@ -49,10 +49,10 @@ public:
 
 	int cap;
 
-	std::vector<Net> nets;
+	std::vector<Net> &nets;
 
 	int numEdges; ///< number of edges of the grid
-	std::vector<int> edgeCaps; ///< array of the actual edge capacities after considering for blockage
+	std::vector<int> &edgeCaps; ///< array of the actual edge capacities after considering for blockage
 	std::vector<int> edgeUtils; ///< array of edge utilizations
 	
 
@@ -114,15 +114,6 @@ public:
 		return getElementOrDefault(edgeCaps, edgeID(p1, p2), cap);
 	}
 };
-
-/**
- * \brief Read in the benchmark file and initialize the routing instance.
- * \param fileName Name of the benchmark input file
- * \param rst The to the routing instance to populate
- *
- * This function needs to populate all fields of the routingInst structure.
- */
-void readBenchmark(const char *fileName, RoutingSolver& rst);
 
 
 /**
