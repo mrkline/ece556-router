@@ -594,8 +594,13 @@ void RoutingSolver::rrRoute()
 		lastViolation = violations;
 
 		if(useNetOrdering) {
+			for(auto &net : nets) {
+				net.totalEdgeWeight = totalEdgeWeight(net);
+				net.netSpan = netSpan(net);
+			}
+
 			sort(nets.begin(), nets.end(), [&](const Net &n1, const Net &n2) {
-				return totalEdgeWeight(n1) * netSpan(n2) > totalEdgeWeight(n2) * netSpan(n1);
+				return n1.totalEdgeWeight * n2.netSpan > n2.totalEdgeWeight * n1.netSpan;
 			});
 		}
 		SetHandler signalHandlerSetting(SIGINT);

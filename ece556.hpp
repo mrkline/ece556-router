@@ -106,6 +106,9 @@ struct Net {
 
 	int id; ///< ID of the net
 
+	int totalEdgeWeight = 0; // for sorting
+	int netSpan = 0; // for sorting
+
 	std::vector<Point> pins; ///< pins (or terminals) of the net
 	Route nroute; ///< stored route for the net.
 
