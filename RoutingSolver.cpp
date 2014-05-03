@@ -302,11 +302,8 @@ void RoutingSolver::routeNet(Net& n)
 {
 	assert(n.nroute.empty());
 
-	#pragma omp parallel for
-	for (unsigned int i = 0; i < n.nroute.size(); i++) {
-		aStarRouteSeg(n.nroute[i]);
-	}
-	// TODO: should inter-segment conflict be handled here, or elsewhere?
+	parallelForEach(n.nroute.begin(), n.nroute.end(), 
+	                [&](Path &path) { aStarRouteSeg(path); });
 }
 
 void RoutingSolver::placeNet(const Net& n)

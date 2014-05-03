@@ -3,7 +3,8 @@
 #include <cassert>
 #include <iterator>
 #include <vector>
-
+#include <algorithm>
+#include <future>
 /**
  * \brief Partitions an iterable collection into equally-ish sized partitions
  *
@@ -23,4 +24,27 @@ std::vector<InputIt> partitionCollection(InputIt begin, InputIt end, size_t numP
 		ret[i] = ret[i - 1] + step;
 
 	return ret;
+}
+
+/// Perform a function for each element in a collection in a number of threads equal to
+/// the number of hardware threads available.
+template <typename I, typename F>
+void parallelForEach(I begin, I end, const F &function)
+{
+	auto parts = partitionCollection(
+		begin, 
+		end, 
+		std::max(1u, std::thread::hardware_concurrency())
+	);
+	
+
+	std::vector<std::future<void>> futures;
+
+	for(auto it = parts.begin() + 1, end = parts.end(); it != end; ++it) {
+		futures.emplace_back(std::async([&function, it] {
+			std::for_each(*(it - 1), *it, function);
+		}));
+	}
+
+	for(auto &f : futures) f.wait();
 }
