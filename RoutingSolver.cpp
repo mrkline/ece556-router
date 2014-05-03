@@ -631,11 +631,13 @@ void RoutingSolver::rrRoute()
 			}
 		};
 
-		decomposeNets(nets, useNetDecomposition);
+// 		decomposeNets(nets, useNetDecomposition);
 
 		for(auto &n : nets) {
 			if(hasViolation(n)) {
+
 				ripNet(n);
+				decomposeNet(n, useNetDecomposition);
 				routeNet(n);
 
 				placeNet(n);
