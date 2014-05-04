@@ -30,6 +30,15 @@
 
 using namespace std;
 
+namespace
+{
+	ofstream &getTextLogStream()
+	{
+		static ofstream result("text_index.txt");
+		return result;
+	}
+}
+
 void RoutingSolver::updateEdgeWeights()
 {
 	edgeInfos.resize(edgeCaps.size());
@@ -476,19 +485,45 @@ void RoutingSolver::logViolationSvg()
 	}
 	auto t = std::time(nullptr);
 	auto tm = *std::localtime(&t);
-	
-    array<char, 256> timeString;
 
-    strftime(timeString.data(), timeString.size(), "%Y%m%dT%H%M%S%z", &tm);
-    std::stringstream ss;
-    ss << "violations_" << timeString.data() << ".svg";
-    auto filename = ss.str();
+	array<char, 256> timeString;
 	
-	violationSvg(filename);
+	strftime(timeString.data(), timeString.size(), "%Y%m%dT%H%M%S%z", &tm);
+	std::stringstream ss;
+	ss << "violations_" << timeString.data() << ".svg";
+	auto filename = ss.str();
 	
 	*htmlLog << "<div class=\"background\"><img src=\"" << filename << "\"></div>\n" << std::flush;
 	std::cout << "violations logged to [" << filename << "]\n";
+
+	violationSvg(filename);
+	
+	ss.str("");
+	ss << "violations_" << timeString.data() << ".txt";
+	filename = ss.str();
+	
+	violationTxt(filename);
+	getTextLogStream() << filename << endl;
 }
+
+void RoutingSolver::violationTxt(const string &filename)
+{
+	ofstream txt(filename);
+	
+	Point p;
+	for(p.y = 0; p.y < gy; ++p.y)
+	{
+		for(p.x = 0; p.x < gx; ++p.x)
+		{
+			auto horizEdge = Edge::horizontal(p);
+			auto vertEdge = Edge::vertical(p);
+			int ovf = edgeUtil(horizEdge) + edgeUtil(vertEdge) - edgeCap(horizEdge) - edgeCap(vertEdge);
+			txt << ovf << ' ';
+		}
+		txt << '\n';
+	}
+}
+
 RoutingSolver::RoutingSolver(RoutingInst &inst)
 : gx(inst.gx)
 , gy(inst.gy)

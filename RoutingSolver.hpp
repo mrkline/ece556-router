@@ -68,6 +68,11 @@ class RoutingSolver {
 		return getElementOrDefault(edgeUtils, id, 0);
 	}
 
+	int edgeUtil(const Edge &e) const
+	{
+		return edgeUtil(e.p1, e.p2);
+	}
+
 	void setEdgeCap(const Point &p1, const Point &p2, int capacity)
 	{
 		inst.setEdgeCap(p1, p2, capacity);
@@ -76,6 +81,11 @@ class RoutingSolver {
 	int edgeCap(const Point &p1, const Point &p2) const
 	{
 		return inst.edgeCap(p1, p2);
+	}
+
+	int edgeCap(const Edge &e) const
+	{
+		return edgeCap(e.p1, e.p2);
 	}
 
 	int gx; ///< x dimension of the global routing grid
@@ -115,7 +125,8 @@ public:
 
 	void violationSvg(const std::string& fileName);
 	void toSvg(const std::string& fileName);
-
+	void violationTxt(const std::string &filename);
+	
 	void solveRouting();
 	void rrr();
 };
