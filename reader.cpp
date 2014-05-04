@@ -192,5 +192,10 @@ RoutingInst Reader::readRoutingInst()
 		readNextToken();
 	}
 
+	Point outermost = {result.gx - 1, result.gy - 1};
+	auto outermostV = Edge::vertical(outermost);
+	auto outermostH = Edge::horizontal(outermost);
+	result.edgeCap(outermostV.p1, outermostV.p2); // initialize edge capacities
+	result.edgeCap(outermostH.p1, outermostH.p2); 
 	return result;
 }
