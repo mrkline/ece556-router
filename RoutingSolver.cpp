@@ -36,6 +36,7 @@ void RoutingSolver::updateEdgeWeights()
 
 	for(size_t i = 0; i < edgeInfos.size(); ++i) {
 		auto &ei = edgeInfos[i];
+		// TODO Optimize for hashing
 		const int overflow = edgeUtils[i] - edgeCaps[i];
 
 		if(overflow > 0) {
@@ -125,7 +126,7 @@ bool RoutingSolver::hasViolation(const Net &n) const
 {
 	for(const auto &route : n.nroute) {
 		for(int id : route.edges) {
-			if(edgeUtils[id] > edgeCaps[id]) {
+			if(edgeUtils.at(id) > edgeCaps[id]) {
 				return true;
 			}
 		}
@@ -315,7 +316,7 @@ void RoutingSolver::placeNet(const Net& n)
 			if (placed.count(edge) > 0) {
 				continue;
 			}
-			getElementResizingIfNecessary(edgeUtils, edge, 0)++;
+			edgeUtils[edge]++;
 			placed.emplace(edge);
 		}
 	}
@@ -332,7 +333,7 @@ Route RoutingSolver::ripNet(Net& n)
 			if (ripped.count(edge) > 0) {
 				continue;
 			}
-			getElementResizingIfNecessary(edgeUtils, edge, 0)--;
+			edgeUtils[edge]--;
 			ripped.emplace(edge);
 		}
 	}
@@ -344,6 +345,7 @@ int RoutingSolver::countViolations()
 {
 	int v = 0;
 	for (unsigned int i = 0; i < edgeUtils.size(); i++) {
+		// TODO Optimize for hashing
 		if (edgeUtils[i] > edgeCaps[i]) {
 			v++;
 		}
@@ -365,7 +367,7 @@ void RoutingSolver::violationSvg(const std::string& fileName)
 
 	int maxOverflow = 0;
 	for(size_t i = 0; i < edgeCaps.size(); ++i) {
-		maxOverflow = max(maxOverflow, getElementOrDefault(edgeUtils, i, 0) - edgeCaps[i]);
+		maxOverflow = max(maxOverflow, edgeUtils[i] - edgeCaps[i]);
 	}
 	
 	for (unsigned int i = 0; i < edgeUtils.size(); i++) {
@@ -551,6 +553,8 @@ void RoutingSolver::rrRoute()
 	// get initial solution
 	cout << "[1/2] Creating initial solution...\n";
 	solveRouting();
+
+	return; // TEMP
 
 	// rrr
 	if(!useNetOrdering && !useNetDecomposition) return;
