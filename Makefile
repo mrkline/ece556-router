@@ -1,11 +1,8 @@
 # Taken largely from http://scottmcpeak.com/autodepend/autodepend.html
 
 
-OPENMP_FLAGS := -fopenmp
-# Note: use of "=" instead of ":=" was intentional. This allows Makefile.user
-# to override OPENMP_FLAGS.
-CXXFLAGS      = -std=c++11 -Wall -Wextra -pedantic $(OPENMP_FLAGS)
-LIBFLAGS     := 
+CXXFLAGS      = -std=c++11 -Wall -Wextra -pedantic -pthread
+LIBFLAGS     :=
 
 OBJS := $(patsubst %.cpp,%.o, $(wildcard *.cpp))
 
