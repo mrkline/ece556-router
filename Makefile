@@ -17,10 +17,10 @@ all: release
 
 
 debug: CXXFLAGS += -g
-debug: route
+debug: $(ROUTER)
 
 profile: CXXFLAGS += $(OPTIMIZATIONS) -g -pg
-profile: route
+profile: $(ROUTER)
 
 release: CXXFLAGS+= $(OPTIMIZATIONS)
 release: $(ROUTER)
