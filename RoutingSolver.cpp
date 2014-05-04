@@ -300,8 +300,6 @@ void decomposeNet(Net& n, bool useNetDecomposition)
 // route an unrouted net
 void RoutingSolver::routeNet(Net& n)
 {
-	assert(n.nroute.empty());
-
 	parallelForEach(n.nroute.begin(), n.nroute.end(), 
 	                [&](Path &path) { aStarRouteSeg(path); });
 }
