@@ -108,7 +108,7 @@ public:
 	
 	void routeNet(Net& n);
 	void placeNet(const Net& n);
-	Route ripNet(Net& n);
+	void ripNet(Net& n);
 	int countViolations();
 	bool routeValid(Route& r, bool isplaced);
 

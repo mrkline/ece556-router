@@ -322,10 +322,9 @@ void RoutingSolver::placeNet(const Net& n)
 }
 
 // rip up the route from an old net and return it
-Route RoutingSolver::ripNet(Net& n)
+void RoutingSolver::ripNet(Net& n)
 {
 	unordered_set<int> ripped;
-	Route old;
 
 	for (const auto &s : n.nroute) {
 		for (const auto edge : s.edges) {
@@ -336,8 +335,7 @@ Route RoutingSolver::ripNet(Net& n)
 			ripped.emplace(edge);
 		}
 	}
-	n.nroute.swap(old);
-	return old;
+	n.nroute.clear();
 }
 
 int RoutingSolver::countViolations()
