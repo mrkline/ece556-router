@@ -176,8 +176,17 @@ int main(int argc, char** argv)
 		rst.timeLimit = std::chrono::minutes(30);
 		rst.emitSVG = opts.emitSVG;
 
+
+		if (opts.useNetOrdering)
+			reorderNets(problem.nets);
+		else
+			printf("Not using ordering\n");
+
 		/// run actual routing
-		rst.rrRoute();
+		rst.solveRouting();
+
+		if(opts.useNetOrdering || opts.useNetDecomposition)
+			rst.rrr();
 
 		/// write the result
 		writeToPath(opts.outputFile, problem);

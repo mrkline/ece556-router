@@ -12,6 +12,8 @@ void decomposeNetSimple(Net &n);
 void decomposeNetMST(Net &n);
 void decomposeNet(Net& n, bool useNetDecomposition);
 
+void reorderNets(std::vector<Net>& nets);
+
 /// Solves a routing instance
 class RoutingSolver {
 
@@ -109,14 +111,13 @@ public:
 	Route ripNet(Net& n);
 	int countViolations();
 	bool routeValid(Route& r, bool isplaced);
-	void reorderNets();
 
 
 	void violationSvg(const std::string& fileName);
 	void toSvg(const std::string& fileName);
 
 	void solveRouting();
-	void rrRoute();
+	void rrr();
 };
 
 

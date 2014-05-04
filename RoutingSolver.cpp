@@ -413,7 +413,7 @@ void RoutingSolver::toSvg(const std::string& fileName)
 
 }
 
-void RoutingSolver::reorderNets()
+void reorderNets(std::vector<Net>& nets)
 {
 
 	sort(nets.begin(), nets.end(), [](const Net &n1, const Net &n2) {
@@ -424,10 +424,7 @@ void RoutingSolver::reorderNets()
 
 void RoutingSolver::solveRouting()
 {
-	if (useNetOrdering)
-		reorderNets();
-	else
-		printf("Not using ordering\n");
+	cout << "[1/2] Creating initial solution...\n";
 
 	int startTime = time(0);
 
@@ -543,21 +540,13 @@ namespace
 	};
 }
 
-void RoutingSolver::rrRoute()
+void RoutingSolver::rrr()
 {
 	using std::chrono::steady_clock;
 
 	
 	const auto procedureStartTime = steady_clock::now();
-	
-	// get initial solution
-	cout << "[1/2] Creating initial solution...\n";
-	solveRouting();
 
-	return; // TEMP
-
-	// rrr
-	if(!useNetOrdering && !useNetDecomposition) return;
 	cout << "[2/2] Rip up and reroute...\n";
 	
 	
@@ -636,8 +625,6 @@ void RoutingSolver::rrRoute()
 					.writeln("To stop immediately without writing output press ^C again.\033[0m");
 			}
 		};
-
-// 		decomposeNets(nets, useNetDecomposition);
 
 		for(auto &n : nets) {
 			if(hasViolation(n)) {
