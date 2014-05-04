@@ -59,7 +59,7 @@ class RoutingSolver {
 	void setEdgeUtil(const Point &p1, const Point &p2, int util)
 	{
 		int id = edgeID(p1, p2);
-		getElementInsertingIfNecessary(edgeUtils, id, 0) = util;
+		getElementResizingIfNecessary(edgeUtils, id, 0) = util;
 	}
 
 	int edgeUtil(const Point &p1, const Point &p2) const
@@ -86,8 +86,8 @@ class RoutingSolver {
 	std::vector<Net> &nets;
 
 	int numEdges; ///< number of edges of the grid
-	std::unordered_map<int, int> &edgeCaps; ///< array of the actual edge capacities after considering for blockage
-	std::unordered_map<int, int> edgeUtils; ///< edge utilizations by ID
+	std::vector<int> &edgeCaps; ///< array of the actual edge capacities after considering for blockage
+	std::vector<int> edgeUtils; ///< array of edge utilizations
 	void logViolationSvg();
 public:
 	RoutingInst &inst;

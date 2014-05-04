@@ -110,8 +110,10 @@ static void testReadingInput()
 			}
 		}
 
-		for(const auto& cap : inst.edgeCaps) {
-			std::cout << "-> edge " << cap.first << " cap " << cap.second << "\n";
+		int i = 0;
+		for(int cap : inst.edgeCaps) {
+			std::cout << "-> edge " << i << " cap " << cap << "\n";
+			++i;
 		}
 	}
 	catch(std::exception &exc) {

@@ -4,33 +4,23 @@
 #include <vector>
 #include <ostream>
 #include <utility>     // declval
-#include <unordered_map>
+#include <type_traits> // remove_reference
 
-template <class K, typename V>
-V &getElementInsertingIfNecessary(std::unordered_map<K, V> &map, const K& key, const V& default_)
+template <class T>
+T &getElementResizingIfNecessary(std::vector<T> &vec, size_t index, const T &default_)
 {
-	auto it = map.find(key);
-	if (it == std::end(map)) {
-		V& ret = map[key];
-		ret = default_;
-		return ret;
+	size_t vecSize = vec.size();
+	if(index >= vecSize) {
+		vec.resize(index + 1);
+		for(size_t i = vecSize; i < vec.size(); ++i) {
+			vec[i] = default_;
+		}
 	}
-	else {
-		return it->second;
-	}
+
+	return vec[index];
 }
 
-template <typename K, typename V>
-V getElementOrDefault(const std::unordered_map<K, V>& map, const K& key, const V& default_)
-{
-	auto it = map.find(key);
-	if (it == std::end(map))
-		return default_;
-	else
-		return it->second;
-}
-
-template <class Collection,
+template <class Collection, 
           class T=typename Collection::value_type>
 T getElementOrDefault(const Collection &vec, size_t index, const T &default_)
 {

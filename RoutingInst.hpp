@@ -9,14 +9,14 @@
 struct RoutingInst {
 	int gx, gy;
 	int cap;
-	std::unordered_map<int, int> edgeCaps;
+	std::vector<int> edgeCaps;
 	std::vector<Net> nets;
 
 
 	void setEdgeCap(const Point &p1, const Point &p2, int capacity)
 	{
 		int id = edgeID(p1, p2);
-		getElementInsertingIfNecessary(edgeCaps, id, cap) = capacity;
+		getElementResizingIfNecessary(edgeCaps, id, cap) = capacity;
 	}
 
 	int edgeID(const Point &p1, const Point &p2) const
