@@ -5,18 +5,23 @@
 
                             Team Member Responsibilities
 
-Sam Roth: Changed A* search heuristic to take overflow into account, rather than failing and retrying with a greater overflow tolerance if no way around a blockage could be found.
+Sam Roth: Changed A* search heuristic to take overflow into account, rather
+than failing and retrying with a greater overflow tolerance if no way around a
+blockage could be found.
 
-Robert Buchanan: MST net decomposition (though this was present in the last part). Some minor involement with A* search implementation.
+Robert Buchanan: MST net decomposition (though this was present in the last
+part). Some minor involement with A* search implementation. Improvements to A* search
+heuristic.
 
-Matt Kline: Optimization and refactoring
+Matt Kline: Optimization and refactoring. 
 
-                                     adaptec1.gr
-+--------------------+--------------------+--------------------+--------------------+
-|     -d=0 -n=0      |     -d=0 -n=1      |     -d=1 -n=0      |     -d=1 -n=1      |  
-|   TWL        TOF   |   TWL        TOF   |   TWL        TOF   |   TWL        TOF   | 
-+---------+----------+---------+----------+---------+----------+---------+----------+
-|  6278138|   1810896|  5767132|   1446767|  3788586|    348154|  3767157|    347473| 
-+---------+----------+---------+----------+---------+----------+---------+----------+
-
++-----------------+--------------------------------+--------------------------------------+
+| Benchmark       | No Improvements                | All Improvements                     |
++-----------------+--------------------------------+--------------------------------------+
+|                 | RUN     | TOF     | Q          |  RUN     |    TOF    | Q             |
++-----------------+--------------------------------+--------------------------------------+
+| Adaptec1        |  16.05  | 358394  | 741875.58  |  16.70   |    167503 | 353989.67     |
+| Adaptec2        |  15.68  |   3512  |   7183.21  |  13.46   |      1729 |   3280.49     |
+| Adaptec3        |  15.20  | 386084  | 777315.79  |  31.32   |    135703 | 419050.86     |
++-----------------+--------------------------------+--------------------------------------+
 
