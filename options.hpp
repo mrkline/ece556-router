@@ -3,6 +3,7 @@
 #ifndef OPTIONS_HPP_GY8LUN
 #define OPTIONS_HPP_GY8LUN
 
+#include <stdexcept>
 #include <string>
 
 struct Options {

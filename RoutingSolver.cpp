@@ -465,7 +465,7 @@ void RoutingSolver::placeNet(const Net& n)
 
 			if (findDependencyChains) {
 				auto &ei = getElementResizingIfNecessary(edgeInfos, edge, EdgeInfo{});
-				ei.nets.emplace(n.id);
+				ei.nets.insert(n.id);
 			}
 
 			getElementResizingIfNecessary(edgeUtils, edge, 0)++;
