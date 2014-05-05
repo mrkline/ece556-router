@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include "ece556.hpp"
 #include "RoutingInst.hpp"
+#include "options.hpp"
 
 void decomposeNets(std::vector<Net>& nets, bool useNetDcomposition);
 
@@ -99,6 +100,7 @@ class RoutingSolver {
 	int gy; ///< y dimension of the global routing grid
 
 	int cap;
+	int iteration = 1;
 
 	std::vector<Net> &nets;
 	std::vector<Net *> nets_byid;
@@ -108,6 +110,7 @@ class RoutingSolver {
 	std::vector<int> edgeUtils; ///< array of edge utilizations
 	void logViolationSvg();
 public:
+	Options::CostFunction costFunction = Options::Standard;
 	RoutingInst &inst;
 	bool emitSVG = false;
 	std::chrono::seconds timeLimit = std::chrono::seconds::max();
