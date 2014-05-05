@@ -11,6 +11,7 @@ struct Options {
 	bool useNetDecomposition = true;
 	bool useNetOrdering = true;
 	bool emitSVG = false;
+        bool findDependencyChains = false;
 	
 	enum CostFunction {
 		Standard, NC

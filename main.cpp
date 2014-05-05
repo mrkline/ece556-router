@@ -171,7 +171,7 @@ int main(int argc, char** argv)
 
 		rst.useNetDecomposition = opts.useNetDecomposition;
 		rst.useNetOrdering = opts.useNetOrdering;
-		rst.timeLimit = std::chrono::minutes(30);
+		rst.timeLimit = std::chrono::minutes(13);
 		rst.emitSVG = opts.emitSVG;
 		rst.costFunction = opts.costFunction;
 

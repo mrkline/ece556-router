@@ -117,6 +117,7 @@ public:
 
 	bool useNetDecomposition = true;
 	bool useNetOrdering = true;
+	bool findDependencyChains = false;
 
 	RoutingSolver(RoutingInst &inst);
 	~RoutingSolver();

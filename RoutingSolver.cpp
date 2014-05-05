@@ -463,7 +463,7 @@ void RoutingSolver::placeNet(const Net& n)
 				continue;
 			}
 
-			if (/* TODO */ false) {
+			if (findDependencyChains) {
 				auto &ei = getElementResizingIfNecessary(edgeInfos, edge, EdgeInfo{});
 				ei.nets.emplace(n.id);
 			}
@@ -485,7 +485,7 @@ void RoutingSolver::ripNet(Net& n)
 				continue;
 			}
 
-			if (/* TODO */ false) {
+			if (findDependencyChains) {
 				auto &ei = getElementResizingIfNecessary(edgeInfos, edge, EdgeInfo{});
 				ei.nets.erase(n.id);
 			}
@@ -565,7 +565,6 @@ void RoutingSolver::toSvg(const std::string& fileName)
 	}
 	svg << "</svg>";
 	svg.close();
-
 }
 
 
@@ -695,11 +694,14 @@ void RoutingSolver::reorderNetsFancy(std::vector<Net>& nets)
 	} cl (*this, worst_nets);
 }
 
+chrono::time_point<chrono::steady_clock> procedureStartTime;
+
 void RoutingSolver::solveRouting()
 {
 	cout << "[1/2] Creating initial solution...\n";
 
 	int startTime = time(0);
+	procedureStartTime = chrono::steady_clock::now();
 
 	/// Print every 200 milliseconds
 	PeriodicRunner<chrono::milliseconds> printer(chrono::milliseconds(200));
@@ -849,9 +851,6 @@ void RoutingSolver::rrr()
 {
 	using std::chrono::steady_clock;
 
-	
-	const auto procedureStartTime = steady_clock::now();
-
 	cout << "[2/2] Rip up and reroute...\n";
 	
 	
@@ -930,9 +929,6 @@ void RoutingSolver::rrr()
 					.writeln("To stop immediately without writing output press ^C again.\033[0m");
 			}
 		};
-
-		if (/* TODO */ false) {
-		}
 
 		for(auto &n : nets) {
 			// always run for NC
