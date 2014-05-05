@@ -9,6 +9,7 @@
 #include <iostream>
 #include <queue>
 #include <sstream>
+#include <map>
 #include <unordered_map>
 #include <unordered_set>
 #include <csignal>
@@ -88,6 +89,85 @@ int RoutingSolver::netSpan(const Net &n) const
 	return result;
 }
 
+
+int RoutingSolver::netOverlapArea(const Net &m, const Net &n) const
+{
+	int mxmax = 0, mymax = 0;
+	int mxmin = gx, mymin = gy;
+	int nxmax = 0, nymax = 0;
+	int nxmin = gx, nymin = gy;
+	int sxmax, symax, sxmin, symin;
+	for (const auto &p : m.pins) {
+		mxmax = std::max<int>(mxmax, p.x);
+		mymax = std::max<int>(mymax, p.y);
+		mxmin = std::min<int>(mxmin, p.x);
+		mymin = std::min<int>(mymin, p.y);
+	}
+	for (const auto &p : n.pins) {
+		nxmax = std::max<int>(nxmax, p.x);
+		nymax = std::max<int>(nymax, p.y);
+		nxmin = std::min<int>(nxmin, p.x);
+		nymin = std::min<int>(nymin, p.y);
+	}
+	sxmax = std::min<int>(nxmax, mxmax);
+	sxmin = std::max<int>(nxmin, mxmin);
+	symax = std::min<int>(nymax, mymax);
+	symin = std::max<int>(nymin, mymin);
+
+	if (sxmax <= sxmin || symax <= symin) {
+		return 0;
+	}
+
+	return (sxmax - sxmin) * (symax - symin);
+}
+
+int RoutingSolver::netOverlap(const Net &m, const Net &n) const
+{
+	int mxmax = 0, mymax = 0;
+	int mxmin = gx, mymin = gy;
+	int nxmax = 0, nymax = 0;
+	int nxmin = gx, nymin = gy;
+	int sxmax, symax, sxmin, symin;
+	for (const auto &p : m.pins) {
+		mxmax = std::max<int>(mxmax, p.x);
+		mymax = std::max<int>(mymax, p.y);
+		mxmin = std::min<int>(mxmin, p.x);
+		mymin = std::min<int>(mymin, p.y);
+	}
+	for (const auto &p : n.pins) {
+		nxmax = std::max<int>(nxmax, p.x);
+		nymax = std::max<int>(nymax, p.y);
+		nxmin = std::min<int>(nxmin, p.x);
+		nymin = std::min<int>(nymin, p.y);
+	}
+	sxmax = std::min<int>(nxmax, mxmax);
+	sxmin = std::max<int>(nxmin, mxmin);
+	symax = std::min<int>(nymax, mymax);
+	symin = std::max<int>(nymin, mymin);
+	int c = 0;
+	for (const auto &p : m.pins) {
+		if (p.x <= sxmax && p.x >= sxmin && p.y <= symax && p.y >= symin) {
+			c++;
+		}
+	}
+	return c;
+}
+
+
+int RoutingSolver::netArea(const Net &n) const
+{
+	int xmax = 0, ymax = 0;
+	int xmin = gx, ymin = gy;
+	for(const auto &p : n.pins) {
+		xmax = std::max<int>(xmax, p.x);
+		ymax = std::max<int>(ymax, p.y);
+		xmin = std::min<int>(xmin, p.x);
+		ymin = std::min<int>(ymin, p.y);
+	}
+	return (xmax - xmin) * (ymax - ymin);
+}
+
+
 int RoutingSolver::edgeWeight(const Edge &e) const
 {
 	return edgeWeight(edgeID(e));
@@ -141,6 +221,53 @@ bool RoutingSolver::hasViolation(const Net &n) const
 	}
 
 	return false;
+}
+
+void RoutingSolver::connectViaLine(std::vector<int>& s, Point p1, Point p2) {
+	if (p1.x == p2.x) {
+		Point p = Point{p1.x, std::min<int>(p1.y, p2.y)};
+		int end = std::max<int>(p1.y, p2.y);
+		for (; p.y < end; p.y++) {
+			s.push_back(edgeID(Edge::vertical(p)));
+		}
+	} else if (p1.y == p2.y) {
+		Point p = Point{std::min<int>(p1.x, p2.x), p1.y};
+		int end = std::max<int>(p1.x, p2.x);
+		for (; p.x < end; p.x++) {
+			s.push_back(edgeID(Edge::horizontal(p)));
+		}
+	} else {
+		assert (0 == 1);
+	}
+}
+
+void RoutingSolver::ellRouteSeg(Path& s)
+{
+	int xyv = 0, yxv = 0;
+	std::vector<int> xyr, yxr;
+
+
+	connectViaLine(xyr, s.p1, Point{s.p1.x, s.p2.y});
+	connectViaLine(xyr, s.p2, Point{s.p1.x, s.p2.y});
+
+	connectViaLine(yxr, s.p1, Point{s.p2.x, s.p1.y});
+	connectViaLine(yxr, s.p2, Point{s.p2.x, s.p1.y});
+
+	for (const auto e : xyr) {
+		xyv += 1 + penalty*getElementOrDefault(edgeUtils, e, 0) /
+			(getElementOrDefault(edgeCaps, e, cap) + 1);
+	}
+
+	for (const auto e : yxr) {
+		yxv += 1 + penalty*getElementOrDefault(edgeUtils, e, 0) /
+			(getElementOrDefault(edgeCaps, e, cap) + 1);
+	}
+
+	if (yxv < xyv) {
+		s.edges = yxr;
+	} else {
+		s.edges = xyr;
+	}
 }
 
 void RoutingSolver::aStarRouteSeg(Path& s)
@@ -322,6 +449,12 @@ void RoutingSolver::placeNet(const Net& n)
 			if (placed.count(edge) > 0) {
 				continue;
 			}
+
+			if (/* TODO */ false) {
+				auto &ei = getElementResizingIfNecessary(edgeInfos, edge, EdgeInfo{});
+				ei.nets.emplace(n.id);
+			}
+
 			getElementResizingIfNecessary(edgeUtils, edge, 0)++;
 			placed.emplace(edge);
 		}
@@ -338,6 +471,12 @@ void RoutingSolver::ripNet(Net& n)
 			if (ripped.count(edge) > 0) {
 				continue;
 			}
+
+			if (/* TODO */ false) {
+				auto &ei = getElementResizingIfNecessary(edgeInfos, edge, EdgeInfo{});
+				ei.nets.erase(n.id);
+			}
+
 			getElementResizingIfNecessary(edgeUtils, edge, 0)--;
 			ripped.emplace(edge);
 		}
@@ -416,13 +555,131 @@ void RoutingSolver::toSvg(const std::string& fileName)
 
 }
 
-void reorderNets(std::vector<Net>& nets)
-{
 
-	sort(nets.begin(), nets.end(), [](const Net &n1, const Net &n2) {
-		return n2.pins.size() > n1.pins.size();
-// 		return n1.pinTourManhattan() > n2.pinTourManhattan();
+void RoutingSolver::reorderNets(std::vector<Net>& nets)
+{
+	// this needs to be a total order
+	sort(nets.begin(), nets.end(), [&](const Net &n1, const Net &n2) {
+		int o, s1, s2;
+		o = netOverlapArea(n1, n2) * netOverlap(n1, n2);
+		s1 = netArea(n1) * n1.pins.size();
+		s2 = netArea(n2) * n2.pins.size();
+		return (s1 - s2) * (o * o + 1) < 0;
 	});
+}
+
+void RoutingSolver::reorderNetsFancy(std::vector<Net>& nets)
+{
+	std::cout << "start reorder\n";
+
+	std::set<int> worst_nets;
+	
+	auto edgeComp = [&](const int e1, const int e2) {
+		//return edgeInfos[e1].nets.size() < edgeInfos[e2].nets.size();
+		return edgeUtils[e1] * (edgeCaps[e2] + 1) < edgeUtils[e2] * (edgeCaps[e1] + 1);
+	};
+
+	// find ~1000 nets on the worst edges
+	std::priority_queue<int, std::vector<int>, decltype(edgeComp)> q(edgeComp);
+	for (unsigned int e = 0; e < edgeInfos.size(); e++) {
+		q.emplace(e);
+	}
+	while (worst_nets.size() < 5000 && !q.empty()) {
+		for (const auto n : edgeInfos[q.top()].nets) {
+			assert(edgeInfos[q.top()].nets.size() != 0);
+			worst_nets.insert(n);
+		}
+		q.pop();
+	}
+
+	struct ChainLength {
+		RoutingSolver &rs;
+		std::set<int> ids;
+		std::vector<int> id_vec;
+
+		std::map<int, int> chainlen;
+		std::unordered_map<int, int> span;
+		std::unordered_map<int, int> computed;
+		std::unordered_map<int, std::map<int, int>> overlap;
+
+		ChainLength(RoutingSolver &r, std::set<int> &nets) : rs(r), ids(nets) {
+			for (const int id : ids) {
+				span[id] = rs.netSpan(*rs.nets_byid[id]);
+				id_vec.push_back(id);
+			}
+
+			// compute pairwise overlap of nets
+			for (unsigned int e = 0; e < rs.edgeInfos.size(); e++) {
+				for (unsigned int i = 0; i < id_vec.size(); i++) {
+					if (!rs.edgeInfos[e].nets.count(i)) continue;
+					for (unsigned int j = i + 1; j < id_vec.size(); j++) {
+						if (!rs.edgeInfos[e].nets.count(j)) continue;
+						overlap[id_vec[i]][id_vec[j]]++;
+						overlap[id_vec[j]][id_vec[i]]++;
+					}
+				}
+			}
+
+			// compute all chain lengths
+			for (const int id : ids) {
+				chainLength(id);
+			}
+			reorderOrder();
+
+			std::cout << "\nchain lengths: ";
+			for (const int id : id_vec) {
+				std::cout << chainlen[id] << ", ";
+			}
+			std::cout << "\ndone computing chainlengths...\n";
+
+			// WARNING: WEIRD AND CRAZY THING!!!!
+			// pull up the most obnoxious nets so nothing has to reroute over them.
+			for (const int id : id_vec) {
+				rs.ripNet(*rs.nets_byid[id]);
+			}
+		}
+
+		// find the length of the longest chain with "id" as minimal element
+		// TODO: ... or do I want it as the maximal element??
+		int chainLength(int id) {
+			if (computed[id] == 1) {
+				return chainlen[id];
+			} else if (computed[id] == -1) {
+				// cycle warning!!! Shouldn't happen (I hope)
+				std::cout << "!";
+				return 0;
+			}
+	
+			// initialize computation for this chain
+			computed[id] = -1;
+			chainlen[id] = 0;
+
+			// find chain length based on dominating nets
+			for (const int jd : ids) {
+				int o = overlap[id][jd];
+				if (id == jd || !o || span[id] >= span[jd]) continue;
+	
+				// find max chain length for non-dominated nets
+				chainlen[id] = std::max<int>(chainlen[id], chainLength(jd) + 1);
+			}
+			computed[id] = 1;
+			return chainlen[id];
+		}
+
+		void reorderOrder() {
+			stable_sort(rs.nets.begin(), rs.nets.end(), [&](const Net &n1, const Net &n2) {
+				if (!ids.count(n1.id) && !ids.count(n2.id)) {
+					return false;
+				} else if (!ids.count(n1.id)) {
+					return true;
+				} else if (!ids.count(n2.id)) {
+					return false;
+				} else {
+					return chainlen[n1.id] < chainlen[n2.id];
+				}
+			});
+		}
+	} cl (*this, worst_nets);
 }
 
 void RoutingSolver::solveRouting()
@@ -532,7 +789,13 @@ RoutingSolver::RoutingSolver(RoutingInst &inst)
 , edgeCaps(inst.edgeCaps)
 , inst(inst)
 {
-
+	for (unsigned int i = 0; i < inst.nets.size(); i++) {
+		nets_byid.push_back(&inst.nets[i]);
+		if (i != (unsigned int)inst.nets[i].id) {
+			std::cout << "nets aren't ordered!!!\n";
+			exit(-1);
+		}
+	}
 }
 
 RoutingSolver::~RoutingSolver()
@@ -579,9 +842,10 @@ void RoutingSolver::rrr()
 	cout << "[2/2] Rip up and reroute...\n";
 	
 	
-	int deltaPenalty = 2;
+	int deltaPenalty = 1;
 	int deltaViolation = 0;
 	int lastViolation = 0;
+	penalty = 20;
 	const time_t startTime = time(nullptr);
 	
 	for(int iter = 0; true /* no iteration limit */; ++iter) {
@@ -621,9 +885,7 @@ void RoutingSolver::rrr()
 				net.netSpan = netSpan(net);
 			}
 
-			sort(nets.begin(), nets.end(), [&](const Net &n1, const Net &n2) {
-				return n1.totalEdgeWeight * n2.netSpan > n2.totalEdgeWeight * n1.netSpan;
-			});
+			reorderNets(nets);
 		}
 		SetHandler signalHandlerSetting(SIGINT);
 		ProgressBar pbar(cout);
@@ -654,6 +916,9 @@ void RoutingSolver::rrr()
 					.writeln("To stop immediately without writing output press ^C again.\033[0m");
 			}
 		};
+
+		if (/* TODO */ false) {
+		}
 
 		for(auto &n : nets) {
 			if(hasViolation(n)) {

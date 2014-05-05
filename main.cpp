@@ -20,6 +20,7 @@ struct Options {
 	bool useNetDecomposition = true;
 	bool useNetOrdering = true;
 	bool emitSVG = false;
+	bool findDependencyChains = false;
 };
 
 
@@ -55,6 +56,7 @@ static Options parseOpts(int argc, char **argv)
 		{"help", no_argument, nullptr, 'h'},
 		{"decomp", required_argument, nullptr, 'd'},
 		{"order", required_argument, nullptr, 'n'},
+		{"depchain", required_argument, nullptr, 'c'},
 		{"emit-svg", no_argument, nullptr, 's'},
 		{nullptr, 0, nullptr, 0}
 	};
@@ -66,6 +68,9 @@ static Options parseOpts(int argc, char **argv)
 			} break;
 			case 'n': {
 				result.useNetOrdering = optArgToBool("-n");
+			} break;
+			case 'f': {
+				result.findDependencyChains = optArgToBool("-f");
 			} break;
 			case 'h': {
 				usage(argc, argv);
@@ -180,7 +185,7 @@ int main(int argc, char** argv)
 
 
 		if (opts.useNetOrdering)
-			reorderNets(problem.nets);
+			rst.reorderNets(problem.nets);
 		else
 			printf("Not using ordering\n");
 

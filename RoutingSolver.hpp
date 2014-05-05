@@ -3,6 +3,9 @@
 
 #include <memory>
 #include <vector>
+#include <set>
+#include <unordered_set>
+#include <unordered_map>
 #include "ece556.hpp"
 #include "RoutingInst.hpp"
 
@@ -12,8 +15,6 @@ void decomposeNetSimple(Net &n);
 void decomposeNetMST(Net &n);
 void decomposeNet(Net& n, bool useNetDecomposition);
 
-void reorderNets(std::vector<Net>& nets);
-
 /// Solves a routing instance
 class RoutingSolver {
 
@@ -21,6 +22,8 @@ class RoutingSolver {
 	{
 		int overflowCount; // k_e^k
 		int weight; // w_e^k
+
+		std::set<int> nets;
 		
 		EdgeInfo()
 		: overflowCount(0)
@@ -37,9 +40,13 @@ class RoutingSolver {
 	int edgeWeight(int id) const;
 	int totalEdgeWeight(const Net &n) const;
 	int netSpan(const Net &n) const;
+	int netOverlap(const Net &m, const Net &n) const;
+	int netOverlapArea(const Net &m, const Net &n) const;
+	int netArea(const Net &n) const;
+
 	bool hasViolation(const Net &n) const;
 
-	int penalty = 10;
+	int penalty = 20;
 
 	int edgeID(const Point &p1, const Point &p2) const
 	{
@@ -94,6 +101,7 @@ class RoutingSolver {
 	int cap;
 
 	std::vector<Net> &nets;
+	std::vector<Net *> nets_byid;
 
 	int numEdges; ///< number of edges of the grid
 	std::vector<int> &edgeCaps; ///< array of the actual edge capacities after considering for blockage
@@ -112,9 +120,17 @@ public:
 
 	bool neighbor(Point &p, unsigned int caseNumber);
 
+
+	void reorderNets(std::vector<Net>& nets);
+	void reorderNetsFancy(std::vector<Net>& nets);
+
 	/// Use A* search to route a segment with the overflow 
 	/// penalty from the member variable `penalty`.
 	void aStarRouteSeg(Path& s);
+
+	// L-shaped routing
+	void connectViaLine(std::vector<int>& s, Point p0, Point p1);
+	void ellRouteSeg(Path& s);
 	
 	void routeNet(Net& n);
 	void placeNet(const Net& n);
