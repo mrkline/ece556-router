@@ -37,6 +37,7 @@ namespace
 		static ofstream result("text_index.txt");
 		return result;
 	}
+	
 }
 
 void RoutingSolver::updateEdgeWeights()
@@ -48,8 +49,8 @@ void RoutingSolver::updateEdgeWeights()
 		const int overflow = edgeUtils[i] - edgeCaps[i];
 
 		if(overflow > 0) {
-			ei.weight = overflow * ei.overflowCount;
 			ei.overflowCount++;
+			ei.weight = overflow * ei.overflowCount;
 		}
 		else {
 			ei.weight = 0;
@@ -147,7 +148,7 @@ void RoutingSolver::aStarRouteSeg(Path& s)
 {
 	unordered_set<Point> open;
 	unordered_set<Point> closed;
-	typedef std::pair<int, Point> CostPoint;
+	typedef std::pair<double, Point> CostPoint;
 	
 	auto costComp = [&](const CostPoint &p1, const CostPoint &p2) {
 		return p1.first + s.p2.l1dist(p1.second) >
@@ -158,7 +159,7 @@ void RoutingSolver::aStarRouteSeg(Path& s)
 	unordered_map<Point, Point> prev;
 
 	Point p0;
-	int p0_cost;
+	double p0_cost;
 
 	assert(s.edges.empty());
 
@@ -175,6 +176,7 @@ void RoutingSolver::aStarRouteSeg(Path& s)
 		open.erase(p0);
 		closed.emplace(p0);
 
+		
 		// add valid neighbors
 		for(unsigned int neighborCase = 0; neighborCase < 4; ++neighborCase) {
 			Point p = p0;
@@ -184,12 +186,23 @@ void RoutingSolver::aStarRouteSeg(Path& s)
 			if (closed.count(p) > 0 || open.count(p) > 0) {
 				continue;
 			}
-
+			
+			double extraCost;
+			if(costFunction == Options::NC) {
+				double h = min(1.0, 0.5 + iteration / 100.0);
+				double k = min(1.0, 0.01 + iteration / 100.0);
+				auto &ei = getElementResizingIfNecessary(edgeInfos, edgeID(p, p0), {});
+				extraCost = 1 + h / (1.0 + exp(-k * (edgeUtil(p, p0) + ei.weight) / edgeCap(p, p0))) - h;
+			}
+			else {
+				extraCost = 1 + penalty * edgeUtil(p, p0) / (edgeCap(p, p0) + 1);
+			}
 			// queue valid neighbors for future examination
 			open.emplace(p);
 			open_score.emplace(
-				p0_cost + 1 +
-				penalty*edgeUtil(p, p0) / (edgeCap(p, p0)+1),
+				p0_cost + extraCost,
+// 				p0_cost + 1 +
+// 				penalty*edgeUtil(p, p0) / (edgeCap(p, p0)+1),
 				p);
 			prev[p] = p0;
 		}
@@ -585,6 +598,7 @@ void RoutingSolver::rrr()
 	const time_t startTime = time(nullptr);
 	
 	for(int iter = 0; true /* no iteration limit */; ++iter) {
+		++iteration;
 		if(steady_clock::now() >= procedureStartTime + timeLimit) {
 			cout << "Terminating due to expiration of time limit. Total time taken: " 
 				<< chrono::duration_cast<chrono::seconds>(steady_clock::now() - procedureStartTime).count()
@@ -656,7 +670,8 @@ void RoutingSolver::rrr()
 		};
 
 		for(auto &n : nets) {
-			if(hasViolation(n)) {
+			// always run for NC
+			if(costFunction == Options::NC || hasViolation(n)) {
 
 				ripNet(n);
 				decomposeNet(n, useNetDecomposition);

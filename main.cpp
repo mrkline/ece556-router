@@ -5,6 +5,7 @@
 #include "reader.hpp"
 #include "writer.hpp"
 #include "colormap.hpp"
+#include "options.hpp"
 
 
 // I prefer printf to cout. It's easier to format stuff and the stream operator for cout can be weird.
@@ -12,15 +13,6 @@
 #include <iostream>
 #include <getopt.h> 
 #include <cstring>
-
-
-struct Options {
-	std::string inputBenchmark, outputFile;
-
-	bool useNetDecomposition = true;
-	bool useNetOrdering = true;
-	bool emitSVG = false;
-};
 
 
 
@@ -56,6 +48,7 @@ static Options parseOpts(int argc, char **argv)
 		{"decomp", required_argument, nullptr, 'd'},
 		{"order", required_argument, nullptr, 'n'},
 		{"emit-svg", no_argument, nullptr, 's'},
+		{"cost", required_argument, nullptr, 'c'},
 		{nullptr, 0, nullptr, 0}
 	};
 
@@ -72,6 +65,9 @@ static Options parseOpts(int argc, char **argv)
 			} break;
 			case 's': {
 				result.emitSVG = true;
+			} break;
+			case 'c': {
+				result.setCostFunction(optarg);
 			} break;
 			case ':': break;
 			default: {
@@ -164,12 +160,9 @@ int main(int argc, char** argv)
 {
 	static_cast<void>(testReadingInput); // suppress unused warning
 
-	auto opts = parseOpts(argc, argv);
-
- 	/// create a new routing instance
-
- 	/// read benchmark
+ 	// read benchmark
 	try {
+		auto opts = parseOpts(argc, argv);
 		auto problem = readRoutingInstFromPath(opts.inputBenchmark);
 		RoutingSolver rst(problem);
 
@@ -177,20 +170,20 @@ int main(int argc, char** argv)
 		rst.useNetOrdering = opts.useNetOrdering;
 		rst.timeLimit = std::chrono::minutes(30);
 		rst.emitSVG = opts.emitSVG;
-
+		rst.costFunction = opts.costFunction;
 
 		if (opts.useNetOrdering)
 			reorderNets(problem.nets);
 		else
 			printf("Not using ordering\n");
 
-		/// run actual routing
+		// run actual routing
 		rst.solveRouting();
 
 		if(opts.useNetOrdering || opts.useNetDecomposition)
 			rst.rrr();
 
-		/// write the result
+		// write the result
 		writeToPath(opts.outputFile, problem);
 		return 0;
 	}

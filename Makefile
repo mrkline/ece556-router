@@ -6,7 +6,7 @@ LIBFLAGS     :=
 
 OBJS := $(patsubst %.cpp,%.o, $(wildcard *.cpp))
 
-OPTIMIZATIONS := -O2 -DNDEBUG -flto
+OPTIMIZATIONS := -Ofast -DNDEBUG -flto
 
 ROUTER=ROUTE.exe
 
